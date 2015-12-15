@@ -1,10 +1,9 @@
-from bs4 import BeautifulSoup
-import bs4
+import xml.etree.ElementTree as ET
 from io import open
 from datetime import datetime
-import pdb
-import arrow
-from blist import sortedlist
+from threading import Thread
+import sys
+from sortedcontainers import SortedList
 
 class ChatMessage(object):
 
@@ -16,64 +15,118 @@ class ChatMessage(object):
     def __lt__(self, other):
         return self.timestamp < other.timestamp
 
+    def __len__(self):
+        return len(self.content)
 
 class ChatThread(object):
 
     def __init__(self, participants):
         self.participants = list(participants)
         self.participants.sort()
-        self.messages = sortedlist()
+        self.messages = SortedList()#sortedlist()
 
     def add_message(self, message):
         self.messages.add(message)
 
-DATE_FORMAT = "MMMM D, YYYY h:mma Z"
+    def __lt__(self, other):
+        return len(self.messages) < len(other.messages)
 
-chat_threads = dict()
-file_content = open('./messages.htm', 'r', encoding='utf-8')
+    def __len__(self):
+        return len(self.messages)
 
-temp_files = dict()
+class FacebookChatHistory:
 
-# Break out the data on disk to reduce RAM overhead.
-for line in file_content:
-    if 
+    _DATE_FORMAT = "%A, %B %d, %Y at %I:%M%p %z"
 
-print("Stand by while the HTML is being loaded...")
-doc = BeautifulSoup(file_content, 'html.parser')
-raw_chat_threads = doc.find_all("div", {"class": "thread"})
-print("Found %s chat threads!" % len(raw_chat_threads))
+    def __init__(self, stream, callback=None, progress_output=False):
 
-for rct in raw_chat_threads:
-    #pdb.set_trace()
-    participants = rct.find(text=True).split(", ")
-    participants.sort()
-    participants = tuple(participants)
-    print("Reading chat thread between [%s]..." % ", ".join(participants))
-    ct = chat_threads.get(participants, ChatThread(participants))
-    chat_threads[participants] = ct
-    raw_messages = rct.find_all("div", {"class": "message"})
-    print("-> Found %s chat messages!" % len(raw_messages))
-    last_sender = None
-    last_timestamp = None
-    for rcm in rct:
-        if type(rcm) is not bs4.element.Tag:
-            continue
-        if rcm.name == "div" and "message" in rcm["class"]:
-            last_sender = rcm.find("", {"class": "user"}).find(text=True)
-            # Stupid Facebook only uses the ambiguous timezone format. Let's hope the time
-            # is always in their server's locale and not the user's locale.
-            last_timestamp = rcm.find("", {"class": "meta"}).find(text=True).replace("at ", "")
-            if "PDT" in last_timestamp:
-                last_timestamp = arrow.get(last_timestamp.replace("PDT", "-0700"), DATE_FORMAT)
-            elif "PST" in last_timestamp:
-                last_timestamp = arrow.get(last_timestamp.replace("PST", "-0800"), DATE_FORMAT)
-            else:
-                raise Exception("Expected only PST/PDT timezones (found %s). This is a bug." 
-                    % last_timestamp)
-        elif rcm.name == "p":
-            if last_sender is None or last_timestamp is None:
-                continue
-            ct.add_message(ChatMessage(last_timestamp, last_sender, rcm.text))
-            last_sender, last_timestamp = None, None
+        self.chat_threads = dict()
+        self.user = None
+
+        if callback:
+            if not callable(callback):
+                raise Exception("Callback must be callable")
+            thread = Thread(target=self.__parse_content, args=(stream, callback, progress_output))
+            thread.start()
         else:
-            raise Exception("Unexpected content: " + str(rcm))
+            self.__parse_content(stream, callback, progress_output)
+
+    def __parse_content(self, stream, callback=None, progress_output=False):
+
+        current_thread = None
+        current_sender = None
+        current_timestamp = None
+        last_line_len = 0
+
+        dom_tree = ET.iterparse(stream, events=("start", "end"))
+
+        try:
+            while (True):
+                pos, e = next(dom_tree)
+                if e.tag not in ("div", "span", "p", "h1"):
+                    continue
+
+                class_attr = e.attrib.get('class', [])
+
+                if e.tag == "div":
+                    if "thread" in class_attr and pos == "start":
+                        participants_text = e.text
+                        participants = e.text
+                        participants = participants.split(", ")
+                        participants.sort()
+                        if self.user in participants:
+                            participants.remove(self.user)
+                        participants = tuple(participants)
+                        if len(participants) > 4:
+                            participants_text = participants_text[0:30] \
+                                + "... <%s>" % str(len(participants))
+                        if participants in self.chat_threads:
+                            current_thread = self.chat_threads[participants]
+                            line = "\rContinuing chat thread with [{}]<@{} messages>..." \
+                                        .format(participants_text, len(current_thread))
+                        else:
+                            line = "\rDiscovered chat thread with [{}]..." \
+                                        .format(participants_text)
+                            current_thread = ChatThread(participants)
+                            self.chat_threads[participants] = current_thread
+                        if progress_output:
+                            sys.stderr.write(line.ljust(last_line_len))
+                        last_line_len = len(line)
+
+                        self.chat_threads[participants] = current_thread
+
+                elif e.tag == "span" and pos == "end":
+
+                    if "user" in class_attr:
+                        current_sender = e.text
+                    elif "meta" in class_attr:
+                        current_timestamp = e.text
+                        if "PDT" in current_timestamp:
+                            current_timestamp = current_timestamp.replace("PDT", "-0700")
+                        elif "PST" in current_timestamp:
+                            current_timestamp = current_timestamp.replace("PST", "-0800")
+                        else:
+                            raise Exception("Expected only PST/PDT timezones (found %s). This is a bug."
+                                % current_timestamp)
+                        current_timestamp = datetime.strptime(current_timestamp, self._DATE_FORMAT)
+
+                elif e.tag == "p" and pos == "end":
+                    if current_sender is None or current_timestamp is None:
+                        raise Exception("Data missing from message. This is a parsing error: %s, %s"
+                            % (current_timestamp, current_sender))
+                    current_thread.add_message(ChatMessage(current_timestamp, current_sender, e.text))
+                    current_sender, current_timestamp = None, None
+
+                elif e.tag == "h1" and pos == "end":
+                    if self.user == None:
+                        self.user = e.text.strip()
+
+        except StopIteration:
+            pass
+
+        if progress_output:
+            sys.stderr.write("\r".ljust(last_line_len))
+            sys.stderr.write("\r")
+
+        if callback:
+            callback(self)
