@@ -28,7 +28,7 @@ class TestDataStructures(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def  test_message_content():
-        
+        pass
 
     if __name__ == '__main__':
         unittest.main()
