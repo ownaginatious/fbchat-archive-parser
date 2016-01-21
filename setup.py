@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 from setuptools import setup, find_packages
+from io import open
 
 setup(
     name='fbchat_archive_parser',
@@ -13,4 +14,7 @@ setup(
     license='MIT',
     keywords=['facebook', 'chat', 'history'], # arbitrary keywords
     classifiers=[],
+    install_requires = [line.strip ()
+                        for line in open ("requirements.txt", "r",
+                                    encoding="utf-8").readlines ()],
 )
