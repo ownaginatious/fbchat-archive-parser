@@ -1,11 +1,15 @@
 import unittest
+import os
 from fbchat_archive_parser.parser import FacebookChatHistory
+
+package_dir = os.path.dirname(os.path.abspath(__file__))
 
 class TestDataStructures(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.fbc = FacebookChatHistory("./simulated_data.htm")
+        cls.fbc = FacebookChatHistory( \
+                    os.path.join(package_dir, "simulated_data.htm"))
 
     def test_num_threads(self):
         self.assertEqual(len(self.fbc.chat_threads), 3)
