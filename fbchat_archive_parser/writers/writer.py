@@ -1,29 +1,27 @@
-from fbchat_archive_parser import ChatThread, ChatMessage, FacebookChatHistory
+from ..parser import ChatThread, ChatMessage, FacebookChatHistory
 
-class SerializerDoesNotExist(KeyError):
-    """The requested serializer was not found."""
+class UnserializableObject(Exception):
     pass
-
-class UnserializableObject():
-	
 
 class Writer(object):
 
-	def write(self, data):
-		if isinstance(data, FacebookChatHistory):
-			return self._write_history(data)
-		elif isinstance(data, ChatThread):
-			return self._write_thread(data)
-		elif isinstance(data, ChatMessage):
-			return self._write_message(data)
-		else:
+    DATE_DOC_FORMAT = "%Y-%m-%dT%H:%M%z"
 
+    def write(self, data):
+        if isinstance(data, FacebookChatHistory):
+            return self.write_history(data)
+        elif isinstance(data, ChatThread):
+            return self.write_thread(data)
+        elif isinstance(data, ChatMessage):
+            return self.write_message(data)
+        else:
+            raise UnserializableObject
 
-	def _write_history(self, data):
-        raise NotImplementedError('subclasses of Writer must provide a _write_history() method')
+    def write_history(self, data):
+        raise NotImplementedError
 
-   	def _write_thread(self, data):
-    	raise NotImplementedError('subclasses of Writer must provide a _write_thread() method')
+    def write_thread(self, data):
+        raise NotImplementedError
 
-	def _write_message(self, data):
-    	raise NotImplementedError('subclasses of Writer must provide a _write_message() method')
+    def write_message(self, data):
+        raise NotImplementedError

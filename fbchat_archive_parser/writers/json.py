@@ -1,15 +1,59 @@
+from __future__ import unicode_literals
+from .writer import Writer
+
+import sys
 import json
 
-class Writer(object):
+USER_KEY = "user"
+THREADS_KEY = "threads"
+SENDER_KEY = "sender"
+DATE_KEY = "date"
+MESSAGE_KEY = "message"
+MESSAGES_KEY = "messages"
+PARTICIPANTS_KEY = "participants"
 
-	def write(self):
-		
+class JsonWriter(Writer):
 
-	def _write_history(self):
-        raise NotImplementedError('subclasses of Writer must provide a _write_history() method')
+    def write_history(self, history, stream=sys.stdout):
 
-   	def _write_thread(self):
-    	raise NotImplementedError('subclasses of Writer must provide a _write_thread() method')
+        threads = []
 
-	def _write_message(self):
-    	raise NotImplementedError('subclasses of Writer must provide a _write_message() method')
+        for _, thread in history.iteritems():
+            threads += [self.write_thread(thread, None)]
+
+        content = {
+            USER_KEY: history.user,
+            THREADS_KEY: threads
+        }
+
+        stream.write(json.dumps(content))
+
+    def write_thread(self, thread, stream=sys.stdout):
+
+        messages = []
+
+        for message in thread.messages:
+            messages += [self.write_message(message, None)]
+
+        content = {
+            PARTICIPANTS_KEY: thread.participants,
+            MESSAGES_KEY: messages
+        }
+
+        if not stream:
+            return content
+
+        stream.write(json.dumps(content))
+
+    def write_message(self, message, stream=sys.stdout):
+        
+        content = {
+            SENDER_KEY: message.sender,
+            DATE_KEY: message.timestamp.strftime(self.DATE_DOC_FORMAT),
+            MESSAGE_KEY: message.content
+        }
+
+        if not stream:
+            return content
+
+        stream.write(json.dumps(content))

@@ -1,10 +1,19 @@
-from parser import ChatThread, ChatMessage, FacebookChatHistory
-from writer import JsonWriter
+import importlib
 
-BUILTIN_WRITERS = {
-	"json": "writers.json",
-	"csv": "writers.csv"
-}
+BUILTIN_WRITERS = [
+	"json", "csv", "text"
+]
 
-def write(format, history):
-	pass
+class SerializerDoesNotExist(KeyError):
+    """The requested serializer was not found."""
+    pass
+
+def write(format, data):
+	if format not in BUILTIN_WRITERS:
+		raise SerializerDoesNotExist("No such serializer '%s'" % format)
+
+	writer_name = "fbchat_archive_parser.writers.%s.%sWriter" % (format, format[0].upper() + format[1:])
+	writer_type = importlib.import_module("fbchat_archive_parser.writers.%s" % format)
+
+	item = getattr(writer_type, "%sWriter" % (format[0].upper() + format[1:]))
+	item().write(data)
