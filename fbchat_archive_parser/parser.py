@@ -1,8 +1,8 @@
 import xml.etree.ElementTree as ET
 from io import open
-from datetime import datetime
+from datetime import datetime, timedelta
 from threading import Thread
-import sys
+import sys, pytz
 from sortedcontainers import SortedList
 
 class UnexpectedTimeZoneError(Exception):
@@ -127,10 +127,10 @@ class FacebookChatHistory:
             elif "meta" in class_attr:
                 self.current_timestamp = e.text
                 if "PDT" in self.current_timestamp:
-                    self.current_timestamp = self.current_timestamp.replace("PDT", "") #-7
+                    self.current_timestamp = self.current_timestamp.replace(" PDT", "")
                     delta = timedelta(hours=-7)
                 elif "PST" in self.current_timestamp:
-                    self.current_timestamp = self.current_timestamp.replace("PST", "") #-8
+                    self.current_timestamp = self.current_timestamp.replace(" PST", "")
                     delta = timedelta(hours=-8)
                 else:
                     raise UnexpectedTimeZoneError("Expected only PST/PDT timezones (found %s). This is a bug."
