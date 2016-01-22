@@ -31,7 +31,7 @@ class TestDataStructures(unittest.TestCase):
         actual.sort()
         self.assertEqual(expected, actual)
 
-    def  test_message_content():
+    def  test_message_content(self):
         pass
 
     if __name__ == '__main__':

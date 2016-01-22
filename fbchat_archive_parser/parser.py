@@ -42,7 +42,7 @@ class ChatThread(object):
 
 class FacebookChatHistory:
 
-    _DATE_FORMAT = "%A, %B %d, %Y at %I:%M%p %z"
+    _DATE_FORMAT = "%A, %B %d, %Y at %I:%M%p"
 
     def __init__(self, stream, callback=None, progress_output=False):
 
@@ -83,7 +83,7 @@ class FacebookChatHistory:
         if self.progress_output:
             sys.stderr.write("\r".ljust(self.last_line_len))
             sys.stderr.write("\r")
-        
+
         if self.callback:
             self.callback(self)
 
@@ -127,13 +127,17 @@ class FacebookChatHistory:
             elif "meta" in class_attr:
                 self.current_timestamp = e.text
                 if "PDT" in self.current_timestamp:
-                    self.current_timestamp = self.current_timestamp.replace("PDT", "-0700")
+                    self.current_timestamp = self.current_timestamp.replace("PDT", "") #-7
+                    delta = timedelta(hours=-7)
                 elif "PST" in self.current_timestamp:
-                    self.current_timestamp = self.current_timestamp.replace("PST", "-0800")
+                    self.current_timestamp = self.current_timestamp.replace("PST", "") #-8
+                    delta = timedelta(hours=-8)
                 else:
                     raise UnexpectedTimeZoneError("Expected only PST/PDT timezones (found %s). This is a bug."
                         % self.current_timestamp)
                 self.current_timestamp = datetime.strptime(self.current_timestamp, self._DATE_FORMAT)
+                self.current_timestamp += delta
+                self.current_timestamp = self.current_timestamp.replace(tzinfo=pytz.utc)
 
         elif e.tag == "p" and pos == "end":
             if self.current_sender is None or self.current_timestamp is None:
