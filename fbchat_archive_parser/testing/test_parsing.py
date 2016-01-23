@@ -4,11 +4,12 @@ from fbchat_archive_parser.parser import FacebookChatHistory
 
 package_dir = os.path.dirname(os.path.abspath(__file__))
 
+
 class TestDataStructures(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.fbc = FacebookChatHistory( \
+        cls.fbc = FacebookChatHistory(
                     os.path.join(package_dir, "simulated_data.htm"))
 
     def test_num_threads(self):
@@ -17,8 +18,8 @@ class TestDataStructures(unittest.TestCase):
     def test_thread_participants(self):
 
         expected = [
-            ["Third User",],
-            ["Second User",],
+            ["Third User", ],
+            ["Second User", ],
             ["Third User", "Second User"],
         ]
 
@@ -31,8 +32,8 @@ class TestDataStructures(unittest.TestCase):
         actual.sort()
         self.assertEqual(expected, actual)
 
-    def  test_message_content(self):
+    def test_message_content(self):
         pass
 
-    if __name__ == '__main__':
-        unittest.main()
+if __name__ == '__main__':
+    unittest.main()

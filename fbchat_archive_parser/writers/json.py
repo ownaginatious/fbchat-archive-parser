@@ -12,14 +12,15 @@ MESSAGE_KEY = "message"
 MESSAGES_KEY = "messages"
 PARTICIPANTS_KEY = "participants"
 
+
 class JsonWriter(Writer):
 
     def write_history(self, history, stream=sys.stdout):
 
         threads = []
 
-        for _, thread in history.iteritems():
-            threads += [self.write_thread(thread, None)]
+        for k in history.chat_threads.keys():
+            threads += [self.write_thread(history.chat_threads[k], None)]
 
         content = {
             USER_KEY: history.user,
@@ -46,7 +47,7 @@ class JsonWriter(Writer):
         stream.write(json.dumps(content))
 
     def write_message(self, message, stream=sys.stdout):
-        
+
         content = {
             SENDER_KEY: message.sender,
             DATE_KEY: message.timestamp.strftime(self.DATE_DOC_FORMAT),

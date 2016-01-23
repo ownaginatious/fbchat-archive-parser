@@ -4,5 +4,7 @@
 #
 #    pip-compile requirements.pip
 #
+clip.py==0.3.2
+colorama==0.3.6
 pytz==2015.7
 sortedcontainers==1.4.4

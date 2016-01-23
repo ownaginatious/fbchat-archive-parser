@@ -1,12 +1,17 @@
+from __future__ import unicode_literals
+import sys
 import xml.etree.ElementTree as ET
+import pytz
 from io import open
 from datetime import datetime, timedelta
 from threading import Thread
-import sys, pytz
 from sortedcontainers import SortedList
+from colorama import Fore, Back, Style
+
 
 class UnexpectedTimeZoneError(Exception):
     pass
+
 
 class ChatMessage(object):
 
@@ -18,11 +23,12 @@ class ChatMessage(object):
 
     def __lt__(self, other):
         # More recent messages have a lower sequence number.
-        return self.timestamp < other.timestamp \
-                or self._seq_num > other._seq_num
+        return self.timestamp < other.timestamp or \
+                self._seq_num > other._seq_num
 
     def __len__(self):
         return len(self.content)
+
 
 class ChatThread(object):
 
@@ -40,9 +46,10 @@ class ChatThread(object):
     def __len__(self):
         return len(self.messages)
 
+
 class FacebookChatHistory:
 
-    _DATE_FORMAT = "%A, %B %d, %Y at %I:%M%p"
+    __DATE_FORMAT = "%A, %B %d, %Y at %I:%M%p"
 
     def __init__(self, stream, callback=None, progress_output=False):
 
@@ -56,7 +63,7 @@ class FacebookChatHistory:
         self.last_line_len = 0
 
         self.stream = stream
-        self.progress_output = True
+        self.progress_output = progress_output
         self.callback = callback
         self.seq_num = 0
 
@@ -81,8 +88,11 @@ class FacebookChatHistory:
             pass
 
         if self.progress_output:
-            sys.stderr.write("\r".ljust(self.last_line_len))
-            sys.stderr.write("\r")
+            sys.stdout.write("\r".ljust(self.last_line_len))
+            sys.stdout.write("\r")
+            sys.stdout.flush()
+
+        sys.stdout.write(Style.RESET_ALL)
 
         if self.callback:
             self.callback(self)
@@ -105,17 +115,21 @@ class FacebookChatHistory:
                 if len(participants) > 4:
                     participants_text = participants_text[0:30] \
                         + "... <%s>" % str(len(participants))
+                participants_text += Fore.BLUE + participants_text + Fore.WHITE
                 if participants in self.chat_threads:
                     self.current_thread = self.chat_threads[participants]
-                    line = "\rContinuing chat thread with [{}]<@{} messages>..." \
-                                .format(participants_text, len(self.current_thread))
+                    line = ("\rContinuing chat thread with [{}]" +
+                            Fore.MAGENTA + "<@{} messages>..." +
+                            Fore.WHITE).format(participants_text,
+                                               len(self.current_thread))
                 else:
                     line = "\rDiscovered chat thread with [{}]..." \
                                 .format(participants_text)
                     self.current_thread = ChatThread(participants)
                     self.chat_threads[participants] = self.current_thread
                 if self.progress_output:
-                    sys.stderr.write(line.ljust(self.last_line_len))
+                    sys.stdout.write(line.ljust(self.last_line_len))
+                    sys.stdout.flush()
                 self.last_line_len = len(line)
 
                 self.chat_threads[participants] = self.current_thread
@@ -127,22 +141,30 @@ class FacebookChatHistory:
             elif "meta" in class_attr:
                 self.current_timestamp = e.text
                 if "PDT" in self.current_timestamp:
-                    self.current_timestamp = self.current_timestamp.replace(" PDT", "")
+                    self.current_timestamp = \
+                        self.current_timestamp.replace(" PDT", "")
                     delta = timedelta(hours=-7)
                 elif "PST" in self.current_timestamp:
-                    self.current_timestamp = self.current_timestamp.replace(" PST", "")
+                    self.current_timestamp = \
+                        self.current_timestamp.replace(" PST", "")
                     delta = timedelta(hours=-8)
                 else:
-                    raise UnexpectedTimeZoneError("Expected only PST/PDT timezones (found %s). This is a bug."
-                        % self.current_timestamp)
-                self.current_timestamp = datetime.strptime(self.current_timestamp, self._DATE_FORMAT)
+                    raise UnexpectedTimeZoneError(
+                        "Expected only PST/PDT timezones (found %s). This "
+                        "is a bug." % self.current_timestamp)
+                self.current_timestamp = datetime.strptime(
+                                                  self.current_timestamp,
+                                                  self.__DATE_FORMAT)
                 self.current_timestamp += delta
-                self.current_timestamp = self.current_timestamp.replace(tzinfo=pytz.utc)
+                self.current_timestamp = \
+                    self.current_timestamp.replace(tzinfo=pytz.utc)
 
         elif e.tag == "p" and pos == "end":
             if self.current_sender is None or self.current_timestamp is None:
-                raise Exception("Data missing from message. This is a parsing error: %s, %s"
-                    % (self.current_timestamp, self.current_sender))
+                raise Exception("Data missing from message. This is a parsing"
+                                "error: %s, %s"
+                                % (self.current_timestamp,
+                                   self.current_sender))
 
             self.current_thread.add_message(
                 ChatMessage(
@@ -158,6 +180,5 @@ class FacebookChatHistory:
             self.current_sender, self.current_timestamp = None, None
 
         elif e.tag == "h1" and pos == "end":
-            if self.user == None:
+            if self.user is None:
                 self.user = e.text.strip()
-

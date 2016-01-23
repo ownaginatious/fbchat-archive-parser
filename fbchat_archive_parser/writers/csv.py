@@ -1,5 +1,4 @@
 from __future__ import unicode_literals, absolute_import
-
 from .writer import Writer
 
 import sys
@@ -10,6 +9,7 @@ SENDER_KEY = "sender"
 DATE_KEY = "date"
 MESSAGE_KEY = "message"
 
+
 class CsvWriter(Writer):
 
     def get_writer(self, stream, include_id=False):
@@ -19,11 +19,10 @@ class CsvWriter(Writer):
         if include_id:
             columns = [THREAD_ID_KEY] + columns
 
-        import pdb; pdb.set_trace()
         w = csv.DictWriter(stream,
-            fieldnames=columns,
-            quoting = csv.QUOTE_MINIMAL,
-            extrasaction = "ignore")
+                           fieldnames=columns,
+                           quoting=csv.QUOTE_MINIMAL,
+                           extrasaction="ignore")
 
         w.writeheader()
         return w
@@ -31,8 +30,8 @@ class CsvWriter(Writer):
     def write_history(self, history, stream=sys.stdout, writer=None):
         if not writer:
             writer = self.get_writer(stream, True)
-        for _, thread in history.iteritems():
-            self.write_thread(thread, writer=writer)
+        for k in history.chat_threads.keys():
+            self.write_thread(history.chat_threads[k], writer=writer)
 
     def write_thread(self, thread, stream=sys.stdout, writer=None):
         if not writer:
@@ -40,7 +39,8 @@ class CsvWriter(Writer):
         for message in thread.messages:
             self.write_message(message, thread, writer=writer)
 
-    def write_message(self, message, parent=None, stream=sys.stdout, writer=None):
+    def write_message(self, message, parent=None, stream=sys.stdout,
+                      writer=None):
         if not writer:
             writer = self.get_writer(stream, True)
         row = {
@@ -49,6 +49,7 @@ class CsvWriter(Writer):
             MESSAGE_KEY: message.content
         }
         if parent:
-            row[THREAD_ID_KEY] = "<unknown>" if not parent else ", ".join(parent.participants)
+            row[THREAD_ID_KEY] = "<unknown>" if not parent \
+                                 else ", ".join(parent.participants)
 
         writer.writerow(row)

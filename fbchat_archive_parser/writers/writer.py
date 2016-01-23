@@ -1,7 +1,9 @@
 from ..parser import ChatThread, ChatMessage, FacebookChatHistory
 
+
 class UnserializableObject(Exception):
     pass
+
 
 class Writer(object):
 
