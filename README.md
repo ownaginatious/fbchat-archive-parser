@@ -60,12 +60,14 @@ fbcap ./messages.htm -f json
 
 The output format is as follows:
 
+  > Messages are ordered from oldest to newest.
+   
 ```json
 {
     "threads": [
     	{
             "participants": ["participant_0", "...", "participant_n"],
-            "messages": [ // Ordered from oldest to newest
+            "messages": [
                 {
                     "date": "ISO 8601 formatted date",
                     "sender": "sender name",
@@ -119,6 +121,9 @@ fbcap ./messages.html -t second,third
 ![filter second and third](http://www.ultraimg.com/images/ScreenShot2016-01-25at1.43.33PM.png)
 
 # What else can I do?
+
+Take a look at the help options to find out more!
+
 ```
 $ fbcap --help
 fbcap: A program for converting Facebook chat history to a number of more usable formats
