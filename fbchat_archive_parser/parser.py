@@ -136,20 +136,20 @@ class FacebookChatHistory:
                 if len(participants) > 4:
                     participants_text = participants_text[0:30] \
                         + "... <%s>" % str(len(participants))
-                participants_text = Fore.BLUE + participants_text + Fore.WHITE
+                participants_text = Fore.YELLOW + '[' + participants_text + ']' + Fore.WHITE
                 if self.wait_for_next_thread:
-                    line = ("\rSkipping chat thread with [{}]" +
+                    line = ("\rSkipping chat thread with {}" +
                             Fore.MAGENTA + "..." +
                             Fore.WHITE).format(participants_text)
                 else:
                     if participants in self.chat_threads:
                         self.current_thread = self.chat_threads[participants]
-                        line = ("\rContinuing chat thread with [{}]" +
+                        line = ("\rContinuing chat thread with {}" +
                                 Fore.MAGENTA + "<@{} messages>..." +
                                 Fore.WHITE).format(participants_text,
                                                    len(self.current_thread))
                     else:
-                        line = "\rDiscovered chat thread with [{}]..." \
+                        line = "\rDiscovered chat thread with {}..." \
                                     .format(participants_text)
                         self.current_thread = ChatThread(participants)
                         self.chat_threads[participants] = self.current_thread
