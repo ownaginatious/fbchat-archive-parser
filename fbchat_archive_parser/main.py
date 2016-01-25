@@ -16,7 +16,7 @@ app = clip.App()
 @clip.opt('-t', '--thread',
           help='Only include threads involving exactly the following '
                'comma-separated participants in output '
-               '(-t \'Billy,Steve Jensson)')
+               '(-t \'Billy,Steve Jensson\')')
 @clip.flag('-n', '--nocolor', help='Do not colorize output')
 @clip.arg('path', required=True, help='Path of the messages.htm file to parse')
 def fbcap(path, thread, format, nocolor):
