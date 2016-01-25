@@ -16,18 +16,27 @@ class TextWriter(Writer):
 
     def write_history(self, history, stream=sys.stdout):
 
-        stream.write(Back.BLACK + Fore.WHITE + "Conversation history of " +
-                     Fore.CYAN + history.user + Fore.WHITE + "\n\n")
+        dash_line = "-------------------------" + \
+                    ('-' * len(history.user)) + "-\n"
 
-        for k in history.chat_threads.keys():
-            self.write_thread(history.chat_threads[k], stream)
+        stream.write(Style.BRIGHT + dash_line)
+        stream.write(" Conversation history of " +
+                     Fore.CYAN + history.user + Fore.RESET + "\n")
+        stream.write(dash_line + Style.RESET_ALL)
+
+        if len(history.chat_threads) > 0:
+            for k in history.chat_threads.keys():
+                self.write_thread(history.chat_threads[k], stream)
+        else:
+            stream.write("\n   There's nothing here!\n")
+        stream.write("\n")
 
     def write_thread(self, thread, stream=sys.stdout):
 
         stream.write("\nConversation with %s:\n\n" %
                      (Fore.YELLOW +
                       ", ".join(thread.participants) +
-                      Fore.WHITE))
+                      Fore.RESET))
 
         for message in thread.messages:
             self.write_message(message, stream)
@@ -36,8 +45,7 @@ class TextWriter(Writer):
 
         lines = message.content.split('\n') if message.content else [""]
 
-        stream.write((Style.DIM + "[%s] " +
-                      Style.NORMAL + Fore.CYAN + "%s: " + Fore.WHITE) % (
+        stream.write((Fore.RED + "[%s] " + Fore.CYAN + "%s: " + Fore.WHITE) % (
                      message.timestamp.strftime(self.DATE_DOC_FORMAT),
                      message.sender))
 

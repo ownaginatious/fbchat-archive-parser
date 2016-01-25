@@ -1,7 +1,9 @@
 from __future__ import unicode_literals
+
 import sys
 import xml.etree.ElementTree as ET
 import pytz
+
 from io import open
 from datetime import datetime, timedelta
 from threading import Thread
@@ -93,14 +95,13 @@ class FacebookChatHistory:
             sys.stdout.flush()
 
         sys.stdout.write(Style.RESET_ALL)
+        sys.stdout.write(Fore.RESET)
+        sys.stdout.write(Back.RESET)
 
         if self.callback:
             self.callback(self)
 
     def __process_element(self, pos, e):
-
-        if e.tag not in ("div", "span", "p", "h1"):
-            return
 
         class_attr = e.attrib.get('class', [])
 
@@ -115,7 +116,7 @@ class FacebookChatHistory:
                 if len(participants) > 4:
                     participants_text = participants_text[0:30] \
                         + "... <%s>" % str(len(participants))
-                participants_text += Fore.BLUE + participants_text + Fore.WHITE
+                participants_text = Fore.BLUE + participants_text + Fore.WHITE
                 if participants in self.chat_threads:
                     self.current_thread = self.chat_threads[participants]
                     line = ("\rContinuing chat thread with [{}]" +
@@ -131,8 +132,6 @@ class FacebookChatHistory:
                     sys.stdout.write(line.ljust(self.last_line_len))
                     sys.stdout.flush()
                 self.last_line_len = len(line)
-
-                self.chat_threads[participants] = self.current_thread
 
         elif e.tag == "span" and pos == "end":
 
