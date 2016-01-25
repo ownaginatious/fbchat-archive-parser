@@ -136,7 +136,8 @@ class FacebookChatHistory:
                 if len(participants) > 4:
                     participants_text = participants_text[0:30] \
                         + "... <%s>" % str(len(participants))
-                participants_text = Fore.YELLOW + '[' + participants_text + ']' + Fore.WHITE
+                participants_text = Fore.YELLOW + '[' + \
+                    participants_text + ']' + Fore.WHITE
                 if self.wait_for_next_thread:
                     line = ("\rSkipping chat thread with {}" +
                             Fore.MAGENTA + "..." +

@@ -23,7 +23,7 @@ def fbcap(path, thread, format, nocolor):
     init(strip=nocolor or not sys.stdout.isatty())
     fbch = FacebookChatHistory(path,
                                filter=tuple(thread.split(","))
-                                      if thread else None,
+                               if thread else None,
                                progress_output=sys.stdout.isatty())
     if format == 'stats':
         generate_stats(fbch, sys.stdout)
@@ -55,7 +55,7 @@ def generate_stats(fbch, stream):
         total = sum(p_count.values())
         for s, c in p_count.most_common():
             stream.write("      - " + s + Fore.GREEN +
-                         " [" + str(c) + "|"  +
+                         " [" + str(c) + "|" +
                          str(round((c * 100) / total, 2)) + "%]" +
                          Fore.RESET + '\n')
         stream.write('\n')

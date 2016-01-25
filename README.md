@@ -136,6 +136,6 @@ Arguments:
 Options:
   -h, --help           Show this help message and exit
   -f, --format [str]   Format to convert to (json, csv, text, stats) (default: text)
-  -t, --thread [text]  Only include threads involving exactly the following comma-separated participants in output (-t 'Billy,Steve Jensson)
+  -t, --thread [text]  Only include threads involving exactly the following comma-separated participants in output (-t 'Billy,Steve Jensson')
   -n, --nocolor        Do not colorize output
 ```
