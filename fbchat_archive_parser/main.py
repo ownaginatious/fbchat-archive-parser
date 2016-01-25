@@ -13,26 +13,18 @@ app = clip.App()
 @clip.opt('-f', '--format', default='text',
           help='Format to convert to (%s)' %
                ', '.join(BUILTIN_WRITERS + ('stats',)))
-@clip.opt('-t', '--thread', default=None,
-          help='Only include threads involving the following '
-               'comma-separated people (-t \'Billy,Steve Jensson)')
+@clip.opt('-t', '--thread',
+          help='Only include threads involving exactly the following '
+               'comma-separated participants in output '
+               '(-t \'Billy,Steve Jensson)')
 @clip.flag('-n', '--nocolor', help='Do not colorize output')
 @clip.arg('path', required=True, help='Path of the messages.htm file to parse')
 def fbcap(path, thread, format, nocolor):
     init(strip=nocolor or not sys.stdout.isatty())
-    fbch = FacebookChatHistory(path, progress_output=sys.stdout.isatty())
-    if thread:
-        include = set(thread.lower().split(','))
-        remove = []
-        for participants in fbch.chat_threads.keys():
-            p_lower = tuple(p.lower() for p in participants)
-            if len(include & set(p_lower)) > 0:
-                continue
-            if len(include & set(" ".join(p_lower).split(" "))) > 0:
-                continue
-            remove += [participants]
-        for p in remove:
-            del fbch.chat_threads[p]
+    fbch = FacebookChatHistory(path,
+                               filter=tuple(thread.split(","))
+                                      if thread else None,
+                               progress_output=sys.stdout.isatty())
     if format == 'stats':
         generate_stats(fbch, sys.stdout)
     else:
@@ -63,7 +55,8 @@ def generate_stats(fbch, stream):
         total = sum(p_count.values())
         for s, c in p_count.most_common():
             stream.write("      - " + s + Fore.GREEN +
-                         " [" + str(round((c * 100) / total, 2)) + "]" +
+                         " [" + str(c) + "|"  +
+                         str(round((c * 100) / total, 2)) + "%]" +
                          Fore.RESET + '\n')
         stream.write('\n')
 

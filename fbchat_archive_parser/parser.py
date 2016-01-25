@@ -26,7 +26,8 @@ class ChatMessage(object):
     def __lt__(self, other):
         # More recent messages have a lower sequence number.
         return self.timestamp < other.timestamp or \
-                self._seq_num > other._seq_num
+                (self.timestamp == other.timestamp and
+                 self._seq_num > other._seq_num)
 
     def __len__(self):
         return len(self.content)
@@ -53,7 +54,8 @@ class FacebookChatHistory:
 
     __DATE_FORMAT = "%A, %B %d, %Y at %I:%M%p"
 
-    def __init__(self, stream, callback=None, progress_output=False):
+    def __init__(self, stream, callback=None, progress_output=False,
+                 filter=None):
 
         self.chat_threads = dict()
         self.user = None
@@ -67,7 +69,9 @@ class FacebookChatHistory:
         self.stream = stream
         self.progress_output = progress_output
         self.callback = callback
+        self.filter = set(p.lower() for p in filter) if filter else None
         self.seq_num = 0
+        self.wait_for_next_thread = False
 
         if callback:
             if not callable(callback):
@@ -101,6 +105,20 @@ class FacebookChatHistory:
         if self.callback:
             self.callback(self)
 
+    def __should_record_thread(self, participants):
+        if self.filter is None:
+            return True
+        if len(participants) != len(self.filter):
+            return False
+        p_lower = tuple(p.lower() for p in participants)
+        for t_p in (set(p_lower), set(" ".join(p_lower).split(" "))):
+            f_p = set(self.filter)
+            for p in t_p:
+                f_p.discard(p)
+            if len(f_p) == 0:
+                return True
+        return False
+
     def __process_element(self, pos, e):
 
         class_attr = e.attrib.get('class', [])
@@ -113,26 +131,35 @@ class FacebookChatHistory:
                 if self.user in participants:
                     participants.remove(self.user)
                 participants = tuple(participants)
+                self.wait_for_next_thread = \
+                    not self.__should_record_thread(participants)
                 if len(participants) > 4:
                     participants_text = participants_text[0:30] \
                         + "... <%s>" % str(len(participants))
                 participants_text = Fore.BLUE + participants_text + Fore.WHITE
-                if participants in self.chat_threads:
-                    self.current_thread = self.chat_threads[participants]
-                    line = ("\rContinuing chat thread with [{}]" +
-                            Fore.MAGENTA + "<@{} messages>..." +
-                            Fore.WHITE).format(participants_text,
-                                               len(self.current_thread))
+                if self.wait_for_next_thread:
+                    line = ("\rSkipping chat thread with [{}]" +
+                            Fore.MAGENTA + "..." +
+                            Fore.WHITE).format(participants_text)
                 else:
-                    line = "\rDiscovered chat thread with [{}]..." \
-                                .format(participants_text)
-                    self.current_thread = ChatThread(participants)
-                    self.chat_threads[participants] = self.current_thread
+                    if participants in self.chat_threads:
+                        self.current_thread = self.chat_threads[participants]
+                        line = ("\rContinuing chat thread with [{}]" +
+                                Fore.MAGENTA + "<@{} messages>..." +
+                                Fore.WHITE).format(participants_text,
+                                                   len(self.current_thread))
+                    else:
+                        line = "\rDiscovered chat thread with [{}]..." \
+                                    .format(participants_text)
+                        self.current_thread = ChatThread(participants)
+                        self.chat_threads[participants] = self.current_thread
                 if self.progress_output:
                     sys.stdout.write(line.ljust(self.last_line_len))
                     sys.stdout.flush()
                 self.last_line_len = len(line)
 
+        elif self.wait_for_next_thread:
+            return
         elif e.tag == "span" and pos == "end":
 
             if "user" in class_attr:
