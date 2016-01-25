@@ -32,7 +32,7 @@ The Facebook Chat Archive Parser is a command line tool (and library for advance
 ### How do I get it?
 Install the Facebook Chat Archive Parser via `pip` under at least Python 2.7:
 ```bash
-pip install facebook-chat-archive-parser
+pip install fbchat-archive-parser
 ```
 
 ### How does it work?
