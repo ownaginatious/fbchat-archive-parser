@@ -21,7 +21,7 @@ Your chat history comes in a single HTML page titled `messages.htm`. Unfortunate
 
 There are a number of reasons you may want to parse your Facebook chat history:
 
-1. To make a simulation of your friends using [Markhov chains](https://en.wikipedia.org/wiki/Markov_chain).
+1. To make a simulation of your friends using [Markov chains](https://en.wikipedia.org/wiki/Markov_chain).
 2. You're deleting your Facebook account, but would like a record of your conversations.
 3. You need to analyze a copy of your conversations for legal reasons.
 
