@@ -4,6 +4,7 @@ python:
   - "3.2"
   - "3.3"
   - "3.4"
+  - "3.5"
   # does not have headers provided, please ask https://launchpad.net/~pypy/+archive/ppa
   # maintainers to fix their pypy-dev package.
   - "pypy"
@@ -14,4 +15,4 @@ install:
 
 # command to run tests
 script:
-  - python -m unittest discover fbchat_archive_parser/testing
+  - python -m unittest discover tests
