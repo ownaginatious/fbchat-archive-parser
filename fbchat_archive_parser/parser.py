@@ -7,7 +7,6 @@ import hashlib
 
 from io import open
 from datetime import datetime, timedelta
-from threading import Thread
 from sortedcontainers import SortedList
 from colorama import Fore, Back, Style
 
@@ -43,8 +42,7 @@ class FacebookChatHistory:
 
     __DATE_FORMAT = "%A, %B %d, %Y at %I:%M%p"
 
-    def __init__(self, stream, callback=None, progress_output=False,
-                 filter=None):
+    def __init__(self, stream, progress_output=False, filter=None):
 
         self.chat_threads = dict()
         self.message_cache = None
@@ -63,13 +61,7 @@ class FacebookChatHistory:
         self.wait_for_next_thread = False
         self.thread_signatures = set()
 
-        if callback:
-            if not callable(callback):
-                raise Exception("Callback must be callable")
-            thread = Thread(target=self.__parse_content)
-            thread.start()
-        else:
-            self.__parse_content()
+        self.__parse_content()
 
     def __parse_content(self):
 
