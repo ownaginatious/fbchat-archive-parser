@@ -24,11 +24,7 @@ class TestDataStructures(unittest.TestCase):
         ]
 
         expected = sorted(sorted(x) for x in expected)
-        actual = []
-
-        for participants in self.fbc.chat_threads.keys():
-            actual += [sorted(participants)]
-
+        actual = [sorted(t.participants) for _, t in self.fbc.chat_threads.items()]
         actual.sort()
         self.assertEqual(expected, actual)
 
