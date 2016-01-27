@@ -17,11 +17,36 @@ class UnexpectedTimeZoneError(Exception):
     pass
 
 # More recent messages have a lower magnitude sequence number.
-ChatMessage = namedtuple('ChatMessage',
-                         ['timestamp', 'seq_num', 'sender', 'content'])
+_ChatMessageT = namedtuple('_ChatMessageT',
+                           ['timestamp', 'seq_num', 'sender', 'content'])
+
+
+class ChatMessage(_ChatMessageT):
+    """
+    A chat message from some recipient at
+    a timestamp. Messages can also contain a sequence
+    number for ordering messages that occurred the same time.
+
+    """
+
+    def __new__(cls, timestamp, sender, content, seq_num=0):
+        """
+        timestamp -- the time the message was sent (datetime)
+        sender    -- who sent the message (unicode py2/str py3)
+        content   -- content of the message (unicode py2/str py3)
+        seq_num  -- sequence (default 0)
+        """
+        return super(ChatMessage, cls) \
+            .__new__(cls, timestamp, seq_num, sender, content)
 
 
 class ChatThread(object):
+    """
+    Represents a chat thread between the owner of the history
+    and a list of participants. Messages are stored in sorted
+    order.
+
+    """
 
     def __init__(self, participants):
         self.participants = list(participants)
@@ -29,6 +54,11 @@ class ChatThread(object):
         self.messages = SortedList()
 
     def add_message(self, message):
+        """
+        Adds a message to the chat thread.
+
+        message -- the message to add
+        """
         self.messages.add(message)
 
     def __lt__(self, other):
@@ -39,6 +69,11 @@ class ChatThread(object):
 
 
 class FacebookChatHistory:
+    """
+    Represents the Facebook chat history between the owner of
+    the history and their contacts.
+
+    """
 
     __DATE_FORMAT = "%A, %B %d, %Y at %I:%M%p"
 
@@ -55,7 +90,6 @@ class FacebookChatHistory:
 
         self.stream = stream
         self.progress_output = progress_output
-        self.callback = callback
         self.filter = set(p.lower() for p in filter) if filter else None
         self.seq_num = 0
         self.wait_for_next_thread = False
@@ -64,23 +98,46 @@ class FacebookChatHistory:
         self.__parse_content()
 
     def __parse_content(self):
+        """
+        Parses the HTML content as a stream. This is far less memory
+        intensive than loading the entire HTML file into memory, like
+        BeautifulSoup does.
+        """
 
         for pos, element in ET.iterparse(self.stream, events=("start", "end")):
             self.__process_element(pos, element)
 
+        # If progress output was being written, clear it from the screen.
         if self.progress_output:
             sys.stdout.write("\r".ljust(self.last_line_len))
             sys.stdout.write("\r")
+            sys.stdout.write(Style.RESET_ALL)
+            sys.stdout.write(Fore.RESET)
+            sys.stdout.write(Back.RESET)
             sys.stdout.flush()
 
-        sys.stdout.write(Style.RESET_ALL)
-        sys.stdout.write(Fore.RESET)
-        sys.stdout.write(Back.RESET)
-
-        if self.callback:
-            self.callback(self)
-
     def __should_record_thread(self, participants):
+        """
+        Determines if the thread should be parsed based on the
+        participants and the filter given.
+
+        For example, if the filter states ['jack', 'billy joe'],
+        then only threads with exactly two participants
+        (excluding the owner of the chat history) containing
+        someone with the first or last name 'Jack' and someone
+        named 'Billy Joel' will be included.
+
+        Any of the following would match that criteria:
+
+            - Jack Stevenson, Billy Joel
+            - Billy Joel, Jack Stevens
+            - Jack Jenson, Billy Joel
+            - Jack Jack, Billy Joel
+
+        participants -- the participants of the thread
+                        (excluding the history owner)
+        """
+
         if self.filter is None:
             return True
         if len(participants) != len(self.filter):
@@ -100,6 +157,13 @@ class FacebookChatHistory:
         return len(matched) == len(participants)
 
     def __process_element(self, pos, e):
+        """
+        Parses an incoming HTML element/node for data.
+
+        pos -- the part of the element being parsed
+               (start/end)
+        e   -- the element being parsed
+        """
 
         class_attr = e.attrib.get('class', [])
 
@@ -140,11 +204,16 @@ class FacebookChatHistory:
                     sys.stdout.flush()
                 self.last_line_len = len(line)
             elif pos == "end" and not self.wait_for_next_thread:
+                # Facebook has a tendency to return the same thread more than
+                # once during history collection. Check the collective hash of
+                # all messages in the thread to ensure that we have already
+                # recorded it.
                 self.current_signature = self.current_signature.hexdigest()
                 if self.current_signature in self.thread_signatures:
                     sys.stderr.write("Duplicate thread detected: %s\n "
                                      % str(self.current_thread.participants))
                     return
+                # Mark it as a signature as seen.
                 self.thread_signatures.add(self.current_signature)
                 for cm in self.message_cache:
                     self.current_thread.add_message(cm)
@@ -188,7 +257,6 @@ class FacebookChatHistory:
                              sender=self.current_sender,
                              content=e.text.strip() if e.text else "",
                              seq_num=self.seq_num)
-
             self.message_cache += [cm]
             self.current_signature.update(str(cm.timestamp).encode('utf-8'))
             self.current_signature.update(cm.sender.encode('utf-8'))
