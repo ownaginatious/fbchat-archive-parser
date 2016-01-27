@@ -13,7 +13,7 @@ setup(
     download_url='https://github.com/ownaginatious/fbchat-archive-parser/tarball/0.2',
     license='MIT',
     keywords=['facebook', 'chat', 'messenger', 'history'],
-    classifiers=[],
+    classifiers=['Environment :: Console'],
     install_requires = [line.strip ()
                         for line in open ("requirements.txt", "r",
                                     encoding="utf-8").readlines ()],
