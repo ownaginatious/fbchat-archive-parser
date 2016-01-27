@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import sys
 import xml.etree.ElementTree as ET
 import pytz
+import hashlib
 
 from io import open
 from datetime import datetime, timedelta
@@ -10,27 +11,15 @@ from threading import Thread
 from sortedcontainers import SortedList
 from colorama import Fore, Back, Style
 
+from collections import namedtuple, defaultdict
+
 
 class UnexpectedTimeZoneError(Exception):
     pass
 
-
-class ChatMessage(object):
-
-    def __init__(self, timestamp, sender, content, seq_num):
-        self.sender = sender
-        self.timestamp = timestamp
-        self.content = content
-        self._seq_num = seq_num
-
-    def __lt__(self, other):
-        # More recent messages have a lower sequence number.
-        return self.timestamp < other.timestamp or \
-                (self.timestamp == other.timestamp and
-                 self._seq_num > other._seq_num)
-
-    def __len__(self):
-        return len(self.content)
+# More recent messages have a lower magnitude sequence number.
+ChatMessage = namedtuple('ChatMessage',
+                         ['timestamp', 'seq_num', 'sender', 'content'])
 
 
 class ChatThread(object):
@@ -58,12 +47,12 @@ class FacebookChatHistory:
                  filter=None):
 
         self.chat_threads = dict()
+        self.message_cache = None
         self.user = None
 
         self.current_thread = None
         self.current_sender = None
         self.current_timestamp = None
-        self.caching_timestamp = None
         self.last_line_len = 0
 
         self.stream = stream
@@ -72,6 +61,7 @@ class FacebookChatHistory:
         self.filter = set(p.lower() for p in filter) if filter else None
         self.seq_num = 0
         self.wait_for_next_thread = False
+        self.thread_signatures = set()
 
         if callback:
             if not callable(callback):
@@ -83,15 +73,8 @@ class FacebookChatHistory:
 
     def __parse_content(self):
 
-        dom_tree = ET.iterparse(self.stream, events=("start", "end"))
-
-        try:
-            while (True):
-                pos, e = next(dom_tree)
-                self.__process_element(pos, e)
-
-        except StopIteration:
-            pass
+        for pos, element in ET.iterparse(self.stream, events=("start", "end")):
+            self.__process_element(pos, element)
 
         if self.progress_output:
             sys.stdout.write("\r".ljust(self.last_line_len))
@@ -110,21 +93,28 @@ class FacebookChatHistory:
             return True
         if len(participants) != len(self.filter):
             return False
-        p_lower = tuple(p.lower() for p in participants)
-        for t_p in (set(p_lower), set(" ".join(p_lower).split(" "))):
-            f_p = set(self.filter)
-            for p in t_p:
-                f_p.discard(p)
-            if len(f_p) == 0:
-                return True
-        return False
+        participants = [[p.lower()] + p.lower().split(" ")
+                        for p in participants]
+        matches = defaultdict(set)
+        for e, p in enumerate(participants):
+            for f in self.filter:
+                if f in p:
+                    matches[f].add(e)
+        matched = set()
+        for f in matches:
+            if len(matches[f]) == 0:
+                return False
+            matched |= matches[f]
+        return len(matched) == len(participants)
 
     def __process_element(self, pos, e):
 
         class_attr = e.attrib.get('class', [])
 
-        if e.tag == "div":
-            if "thread" in class_attr and pos == "start":
+        if e.tag == "div" and "thread" in class_attr:
+            if pos == "start":
+                self.message_cache = []
+                self.current_signature = hashlib.md5()
                 participants_text = e.text.strip()
                 participants = participants_text.split(", ")
                 participants.sort()
@@ -153,12 +143,21 @@ class FacebookChatHistory:
                         line = "\rDiscovered chat thread with {}..." \
                                     .format(participants_text)
                         self.current_thread = ChatThread(participants)
-                        self.chat_threads[participants] = self.current_thread
                 if self.progress_output:
                     sys.stdout.write(line.ljust(self.last_line_len))
                     sys.stdout.flush()
                 self.last_line_len = len(line)
-
+            elif pos == "end" and not self.wait_for_next_thread:
+                self.current_signature = self.current_signature.hexdigest()
+                if self.current_signature in self.thread_signatures:
+                    sys.stderr.write("Duplicate thread detected: %s\n "
+                                     % str(self.current_thread.participants))
+                    return
+                self.thread_signatures.add(self.current_signature)
+                for cm in self.message_cache:
+                    self.current_thread.add_message(cm)
+                participants = ", ".join(self.current_thread.participants)
+                self.chat_threads[participants] = self.current_thread
         elif self.wait_for_next_thread:
             return
         elif e.tag == "span" and pos == "end":
@@ -193,17 +192,17 @@ class FacebookChatHistory:
                                 % (self.current_timestamp,
                                    self.current_sender))
 
-            self.current_thread.add_message(
-                ChatMessage(
-                    self.current_timestamp,
-                    self.current_sender,
-                    e.text.strip() if e.text else "",
-                    self.seq_num
-                )
-            )
+            cm = ChatMessage(timestamp=self.current_timestamp,
+                             sender=self.current_sender,
+                             content=e.text.strip() if e.text else "",
+                             seq_num=self.seq_num)
 
-            self.seq_num += 1
+            self.message_cache += [cm]
+            self.current_signature.update(bytes(str(cm.timestamp), 'utf-8'))
+            self.current_signature.update(bytes(cm.sender, 'utf-8'))
+            self.current_signature.update(bytes(cm.content, 'utf-8'))
 
+            self.seq_num -= 1
             self.current_sender, self.current_timestamp = None, None
 
         elif e.tag == "h1" and pos == "end":

@@ -43,8 +43,8 @@ def generate_stats(fbch, stream):
     threads = tuple(fbch.chat_threads[k] for k in fbch.chat_threads.keys())
 
     stream.write('Top 10 longest threads:\n\n')
-    top_10 = enumerate(sorted(threads, key=lambda t: len(t))[::-1][0:10], 1)
-    for i, t in top_10:
+    ordered_threads = sorted(threads, key=lambda t: len(t)).reverse()
+    for i, t in enumerate(ordered_threads[0:10], 1):
         stream.write("  " + Fore.CYAN + '[' + str(i) + '] ' + Fore.RESET +
                      Style.BRIGHT + ", ".join(t.participants) +
                      Fore.CYAN + " (" + str(len(t.messages)) + ")" + "\n")
