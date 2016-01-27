@@ -198,9 +198,9 @@ class FacebookChatHistory:
                              seq_num=self.seq_num)
 
             self.message_cache += [cm]
-            self.current_signature.update(bytes(str(cm.timestamp), 'utf-8'))
-            self.current_signature.update(bytes(cm.sender, 'utf-8'))
-            self.current_signature.update(bytes(cm.content, 'utf-8'))
+            self.current_signature.update(str(cm.timestamp).encode('utf-8'))
+            self.current_signature.update(cm.sender.encode('utf-8'))
+            self.current_signature.update(cm.content.encode('utf-8'))
 
             self.seq_num -= 1
             self.current_sender, self.current_timestamp = None, None
