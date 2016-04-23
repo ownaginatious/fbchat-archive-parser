@@ -1,11 +1,13 @@
 #! /usr/bin/env python
 from setuptools import setup, find_packages
 from io import open
+import versioneer
 
 setup(
     name='fbchat_archive_parser',
     packages = find_packages (exclude = ["tests",]),
-    version='0.3.1',
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     description='A library/command line utility for parsing Facebook chat history',
     author='Dillon Dixon',
     author_email='dillondixon@gmail.com',
