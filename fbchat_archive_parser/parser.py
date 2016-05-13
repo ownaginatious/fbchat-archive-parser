@@ -164,26 +164,32 @@ class FacebookChatHistory:
                (start/end)
         e   -- the element being parsed
         """
-
         class_attr = e.attrib.get('class', [])
 
         if e.tag == "div" and "thread" in class_attr:
             if pos == "start":
                 self.message_cache = []
                 self.current_signature = hashlib.md5()
-                participants_text = e.text.strip()
-                participants = participants_text.split(", ")
-                participants.sort()
-                if self.user in participants:
-                    participants.remove(self.user)
-                participants = tuple(participants)
-                self.wait_for_next_thread = \
-                    not self.__should_record_thread(participants)
-                if len(participants) > 4:
-                    participants_text = participants_text[0:30] \
-                        + "... <%s>" % str(len(participants))
-                participants_text = Fore.YELLOW + '[' + \
-                    participants_text + ']' + Fore.WHITE
+                # Very rarely threads may lack information on who the
+                # participants are. We will consider those threads corrupted
+                # and skip them.
+                if e.text:
+                    participants_text = e.text.strip()
+                    participants = participants_text.split(", ")
+                    participants.sort()
+                    if self.user in participants:
+                        participants.remove(self.user)
+                    participants = tuple(participants)
+                    self.wait_for_next_thread = \
+                        not self.__should_record_thread(participants)
+                    if len(participants) > 4:
+                        participants_text = participants_text[0:30] \
+                            + "... <%s>" % str(len(participants))
+                    participants_text = Fore.YELLOW + '[' + \
+                        participants_text + ']' + Fore.WHITE
+                else:
+                    participants_text = "unknown participants"
+                    self.wait_for_next_thread = True
                 if self.wait_for_next_thread:
                     line = ("\rSkipping chat thread with {}" +
                             Fore.MAGENTA + "..." +
