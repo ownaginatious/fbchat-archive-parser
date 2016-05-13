@@ -12,7 +12,6 @@ setup(
     author='Dillon Dixon',
     author_email='dillondixon@gmail.com',
     url='https://github.com/ownaginatious/fbchat-archive-parser',
-    download_url='https://github.com/ownaginatious/fbchat-archive-parser/tarball/0.3.1',
     license='MIT',
     keywords=['facebook', 'chat', 'messenger', 'history'],
     classifiers=['Environment :: Console'],
