@@ -103,7 +103,7 @@ class FacebookChatHistory:
         intensive than loading the entire HTML file into memory, like
         BeautifulSoup does.
         """
-        parser = XMLParser(encoding='UTF-8')
+        parser = XMLParser(encoding=str('UTF-8'))
         for pos, element in ET.iterparse(
                 self.stream, events=("start", "end"), parser=parser):
             self.__process_element(pos, element)
