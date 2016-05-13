@@ -5,6 +5,10 @@ from .parser import FacebookChatHistory
 from colorama import init, Back, Fore, Style
 from collections import Counter
 
+# Let's force the output to be UTF-8 to both console and file
+sys.stdout = codecs.getwriter ('UTF-8') (sys.stdout.detach ())
+sys.stderr = codecs.getwriter ('UTF-8') (sys.stderr.detach ())
+
 app = clip.App()
 
 
