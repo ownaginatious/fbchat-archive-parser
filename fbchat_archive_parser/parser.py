@@ -104,8 +104,9 @@ class FacebookChatHistory:
         BeautifulSoup does.
         """
 
-        for pos, element in ET.iterparse(self.stream, events=("start", "end")):
-            self.__process_element(pos, element)
+        with open(self.stream, encoding='utf-8') as f:
+            for pos, element in ET.iterparse(f, events=("start", "end")):
+                self.__process_element(pos, element)
 
         # If progress output was being written, clear it from the screen.
         if self.progress_output:
