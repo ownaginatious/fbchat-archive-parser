@@ -74,7 +74,6 @@ class FacebookChatHistory:
     the history and their contacts.
 
     """
-
     __DATE_FORMAT = "%A, %B %d, %Y at %I:%M%p"
 
     def __init__(self, stream, progress_output=False, filter=None):
@@ -103,10 +102,8 @@ class FacebookChatHistory:
         intensive than loading the entire HTML file into memory, like
         BeautifulSoup does.
         """
-
-        with open(self.stream, encoding='utf-8') as f:
-            for pos, element in ET.iterparse(f, events=("start", "end")):
-                self.__process_element(pos, element)
+        for pos, element in ET.iterparse(self.stream, events=("start", "end")):
+            self.__process_element(pos, element)
 
         # If progress output was being written, clear it from the screen.
         if self.progress_output:
@@ -138,7 +135,6 @@ class FacebookChatHistory:
         participants -- the participants of the thread
                         (excluding the history owner)
         """
-
         if self.filter is None:
             return True
         if len(participants) != len(self.filter):
@@ -218,8 +214,10 @@ class FacebookChatHistory:
                 # recorded it.
                 self.current_signature = self.current_signature.hexdigest()
                 if self.current_signature in self.thread_signatures:
-                    sys.stderr.write("Duplicate thread detected: %s\n "
-                                     % str(self.current_thread.participants))
+                    #FIXME: Suppressed until use of a logging library is
+                    #       implemented
+                    #sys.stderr.write("Duplicate thread detected: %s\n "
+                    #                 % str(self.current_thread.participants))
                     return
                 # Mark it as a signature as seen.
                 self.thread_signatures.add(self.current_signature)

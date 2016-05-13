@@ -1,4 +1,5 @@
 import codecs, clip
+from encodings.utf_8 import StreamWriter
 import sys
 from .writers import BUILTIN_WRITERS, write
 from .parser import FacebookChatHistory
@@ -6,8 +7,12 @@ from colorama import init, Back, Fore, Style
 from collections import Counter
 
 # Let's force the output to be UTF-8 to both console and file
-sys.stdout = codecs.getwriter ('UTF-8') (sys.stdout.detach ())
-sys.stderr = codecs.getwriter ('UTF-8') (sys.stderr.detach ())
+if sys.version_info > (3, 1):
+    sys.stdout = codecs.getwriter('UTF-8')(sys.stdout.detach())
+    sys.stderr = codecs.getwriter('UTF-8')(sys.stderr.detach())
+else:
+    sys.stdout = StreamWriter(sys.stdout)
+    sys.stderr = StreamWriter(sys.stderr)
 
 app = clip.App()
 
