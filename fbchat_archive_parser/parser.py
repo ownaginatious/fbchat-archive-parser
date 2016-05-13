@@ -195,8 +195,9 @@ class FacebookChatHistory:
                             Fore.MAGENTA + "..." +
                             Fore.WHITE).format(participants_text)
                 else:
-                    if participants in self.chat_threads:
-                        self.current_thread = self.chat_threads[participants]
+                    participants_key = ", ".join(participants)
+                    if participants_key in self.chat_threads:
+                        self.current_thread = self.chat_threads[participants_key]
                         line = ("\rContinuing chat thread with {}" +
                                 Fore.MAGENTA + "<@{} messages>..." +
                                 Fore.WHITE).format(participants_text,
