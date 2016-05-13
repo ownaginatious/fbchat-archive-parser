@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import sys
 import xml.etree.ElementTree as ET
+from xml.etree.ElementTree import XMLParser
 import pytz
 import hashlib
 
@@ -102,7 +103,9 @@ class FacebookChatHistory:
         intensive than loading the entire HTML file into memory, like
         BeautifulSoup does.
         """
-        for pos, element in ET.iterparse(self.stream, events=("start", "end")):
+        parser = XMLParser(encoding='UTF-8')
+        for pos, element in ET.iterparse(
+                self.stream, events=("start", "end"), parser=parser):
             self.__process_element(pos, element)
 
         # If progress output was being written, clear it from the screen.
