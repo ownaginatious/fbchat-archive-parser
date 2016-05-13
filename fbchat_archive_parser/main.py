@@ -1,4 +1,4 @@
-import clip
+import codecs, clip
 import sys
 from .writers import BUILTIN_WRITERS, write
 from .parser import FacebookChatHistory
