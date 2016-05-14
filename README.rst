@@ -75,18 +75,14 @@ Simply run the command ``fbcap`` in your terminal with your
 
 And watch as the parser sifts through your data!
 
-.. image:: https://zippy.gfycat.com/VariableAlarmedGander.gif
+.. figure:: https://zippy.gfycat.com/VariableAlarmedGander.gif
    :alt: Processing gif
-
-   Processing gif
 
 When it's done, it will dump all your conversation history is dumped to
 ``stdout``. Obviously, this can be very long, so here is an example:
 
-.. image:: http://imgur.com/pXnGJFs.png
+.. figure:: http://imgur.com/pXnGJFs.png
    :alt: Results
-
-   Results
 
 What if I want JSON?
 ~~~~~~~~~~~~~~~~~~~~
@@ -139,10 +135,8 @@ contribute to the conversation.
 
     fbcap ./messages.htm -f stats
 
-.. image:: http://www.ultraimg.com/images/ScreenShot2016-01-25at1.27.57PM.png
+.. figure:: http://www.ultraimg.com/images/ScreenShot2016-01-25at1.27.57PM.png
    :alt: stats image
-
-   stats image
 
 How do I get any of the above into a file?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -165,19 +159,15 @@ remember the last name), the system will try to compensate.
 
     fbcap ./messages.html -t second
 
-.. image:: http://www.ultraimg.com/images/ScreenShot2016-01-25at1.43.25PM.png
+.. figure:: http://www.ultraimg.com/images/ScreenShot2016-01-25at1.43.25PM.png
    :alt: filter second
-
-   filter second
 
 .. code:: bash
 
     fbcap ./messages.html -t second,third
 
-.. image:: http://www.ultraimg.com/images/ScreenShot2016-01-25at1.43.33PM.png
+.. figure:: http://www.ultraimg.com/images/ScreenShot2016-01-25at1.43.33PM.png
    :alt: filter second and third
-
-   filter second and third
 
 What else can I do?
 ===================
