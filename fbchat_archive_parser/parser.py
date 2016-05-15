@@ -237,17 +237,27 @@ class FacebookChatHistory:
             elif "meta" in class_attr:
                 self.current_timestamp = e.text
                 if "PDT" in self.current_timestamp:
-                    self.current_timestamp = \
+                    self.current_timestamp =\
                         self.current_timestamp.replace(" PDT", "")
                     delta = timedelta(hours=-7)
                 elif "PST" in self.current_timestamp:
-                    self.current_timestamp = \
+                    self.current_timestamp =\
                         self.current_timestamp.replace(" PST", "")
                     delta = timedelta(hours=-8)
+                elif "UTC+" in self.current_timestamp or\
+                     "UTC-" in self.current_timestamp:
+                    self.current_timestamp, offset =\
+                        self.current_timestamp.split(" UTC")
+                    offset = [int(x) for x in offset[1:].split(':')]
+                    if '+' in self.current_timestamp:
+                        delta = timedelta (hours=offset[0], minutes=offset[1])
+                    else:
+                        delta = timedelta (hours=-1 * offset[0],
+                                           minutes=-1 * offset[1])
                 else:
                     raise UnexpectedTimeZoneError(
-                        "Expected only PST/PDT timezones (found %s). This "
-                        "is a bug." % self.current_timestamp)
+                        "Unexpected timezone format (found %s). Please "
+                        "report this bug." % self.current_timestamp)
                 self.current_timestamp = datetime.strptime(
                                                   self.current_timestamp,
                                                   self.__DATE_FORMAT)

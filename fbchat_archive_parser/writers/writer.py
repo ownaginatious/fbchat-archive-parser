@@ -7,7 +7,7 @@ class UnserializableObject(Exception):
 
 class Writer(object):
 
-    DATE_DOC_FORMAT = "%Y-%m-%dT%H:%M%z"
+    DATE_DOC_FORMAT = "%Y-%m-%dT%H:%MZ"
 
     def write(self, data):
         if isinstance(data, FacebookChatHistory):
