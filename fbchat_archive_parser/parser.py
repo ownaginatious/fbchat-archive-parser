@@ -97,17 +97,10 @@ class FacebookChatHistory:
 
         self.__parse_content()
 
-    def __parse_content(self):
+    def _clear_output(self):
         """
-        Parses the HTML content as a stream. This is far less memory
-        intensive than loading the entire HTML file into memory, like
-        BeautifulSoup does.
+        Clears progress output (if any) that was written to the screen.
         """
-        parser = XMLParser(encoding=str('UTF-8'))
-        for pos, element in ET.iterparse(
-                self.stream, events=("start", "end"), parser=parser):
-            self.__process_element(pos, element)
-
         # If progress output was being written, clear it from the screen.
         if self.progress_output:
             sys.stdout.write("\r".ljust(self.last_line_len))
@@ -116,6 +109,51 @@ class FacebookChatHistory:
             sys.stdout.write(Fore.RESET)
             sys.stdout.write(Back.RESET)
             sys.stdout.flush()
+
+    def __parse_content(self):
+        """
+        Parses the HTML content as a stream. This is far less memory
+        intensive than loading the entire HTML file into memory, like
+        BeautifulSoup does.
+        """
+        try:
+            for pos, element in ET.iterparse(
+                    self.stream, events=("start", "end"),
+                    parser=XMLParser(encoding=str('UTF-8'))):
+                self.__process_element(pos, element)
+        except ET.ParseError:
+            # Although apparently uncommon, some users have message logs that
+            # may not conform to strict XML standards. We will fall back to
+            # the BeautifulSoup parser in that case.
+
+            # Purge all collected data.
+            self.chat_threads = dict()
+            self.thread_signatures = set()
+            self.message_cache = None
+            self.user = None
+
+            self._clear_output()
+            sys.stderr.write('The streaming parser crashed due to malformed '
+                             'XML. Falling back to the less strict/efficient '
+                             'BeautifulSoup parser. This may take a while... '
+                             '\n')
+            sys.stderr.flush()
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(open(self.stream, 'r').read(), 'lxml')
+            self.__process_element('end', soup.find('h1'))
+            for thread_element in soup.find_all('div', class_='thread'):
+                self.__process_element('start', thread_element)
+                for e in thread_element:
+                    if e.name == 'div':
+                        user = e.find('span', class_='user')
+                        meta = e.find('span', class_='meta')
+                        self.__process_element('end', user)
+                        self.__process_element('end', meta)
+                    elif e.name == 'p':
+                        self.__process_element('end', e)
+                self.__process_element('end', thread_element)
+
+        self._clear_output()
 
     def __should_record_thread(self, participants):
         """
@@ -164,9 +202,10 @@ class FacebookChatHistory:
                (start/end)
         e   -- the element being parsed
         """
-        class_attr = e.attrib.get('class', [])
-
-        if e.tag == "div" and "thread" in class_attr:
+        class_attr = e.attrib.get('class', [])\
+            if e.attrib else e.get('class', [])
+        tag = e.tag if e.tag else e.name
+        if tag == "div" and "thread" in class_attr:
             if pos == "start":
                 self.message_cache = []
                 self.current_signature = hashlib.md5()
@@ -174,7 +213,8 @@ class FacebookChatHistory:
                 # participants are. We will consider those threads corrupted
                 # and skip them.
                 if e.text:
-                    participants_text = e.text.strip()
+                    participants_text = e.text.strip()\
+                                        if e.attrib else e.contents[0].strip()
                     participants = participants_text.split(", ")
                     participants.sort()
                     if self.user in participants:
@@ -197,7 +237,8 @@ class FacebookChatHistory:
                 else:
                     participants_key = ", ".join(participants)
                     if participants_key in self.chat_threads:
-                        self.current_thread = self.chat_threads[participants_key]
+                        self.current_thread =\
+                            self.chat_threads[participants_key]
                         line = ("\rContinuing chat thread with {}" +
                                 Fore.MAGENTA + "<@{} messages>..." +
                                 Fore.WHITE).format(participants_text,
@@ -217,9 +258,9 @@ class FacebookChatHistory:
                 # recorded it.
                 self.current_signature = self.current_signature.hexdigest()
                 if self.current_signature in self.thread_signatures:
-                    #FIXME: Suppressed until use of a logging library is
+                    # FIXME: Suppressed until use of a logging library is
                     #       implemented
-                    #sys.stderr.write("Duplicate thread detected: %s\n "
+                    # sys.stderr.write("Duplicate thread detected: %s\n "
                     #                 % str(self.current_thread.participants))
                     return
                 # Mark it as a signature as seen.
@@ -230,7 +271,7 @@ class FacebookChatHistory:
                 self.chat_threads[participants] = self.current_thread
         elif self.wait_for_next_thread:
             return
-        elif e.tag == "span" and pos == "end":
+        elif tag == "span" and pos == "end":
 
             if "user" in class_attr:
                 self.current_sender = e.text
@@ -250,10 +291,10 @@ class FacebookChatHistory:
                         self.current_timestamp.split(" UTC")
                     offset = [int(x) for x in offset[1:].split(':')]
                     if '+' in self.current_timestamp:
-                        delta = timedelta (hours=offset[0], minutes=offset[1])
+                        delta = timedelta(hours=offset[0], minutes=offset[1])
                     else:
-                        delta = timedelta (hours=-1 * offset[0],
-                                           minutes=-1 * offset[1])
+                        delta = timedelta(hours=-1 * offset[0],
+                                          minutes=-1 * offset[1])
                 else:
                     raise UnexpectedTimeZoneError(
                         "Unexpected timezone format (found %s). Please "
@@ -265,7 +306,7 @@ class FacebookChatHistory:
                 self.current_timestamp = \
                     self.current_timestamp.replace(tzinfo=pytz.utc)
 
-        elif e.tag == "p" and pos == "end":
+        elif tag == "p" and pos == "end":
             if self.current_sender is None or self.current_timestamp is None:
                 raise Exception("Data missing from message. This is a parsing"
                                 "error: %s, %s"
@@ -284,6 +325,6 @@ class FacebookChatHistory:
             self.seq_num -= 1
             self.current_sender, self.current_timestamp = None, None
 
-        elif e.tag == "h1" and pos == "end":
+        elif tag == "h1" and pos == "end":
             if self.user is None:
                 self.user = e.text.strip()

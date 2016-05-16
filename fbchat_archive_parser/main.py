@@ -1,4 +1,4 @@
-import codecs, clip
+import clip
 from encodings.utf_8 import StreamWriter
 import sys
 from .writers import BUILTIN_WRITERS, write
@@ -6,11 +6,9 @@ from .parser import FacebookChatHistory
 from colorama import init, Back, Fore, Style
 from collections import Counter
 
-# Let's force the output to be UTF-8 to both console and file
-if sys.version_info > (3, 1):
-    sys.stdout = codecs.getwriter('UTF-8')(sys.stdout.detach())
-    sys.stderr = codecs.getwriter('UTF-8')(sys.stderr.detach())
-else:
+# Let's force the output to be UTF-8 to both console and file for Python 2.
+# Python 3 is smart enough to not default to the 'ascii' encoder.
+if sys.version_info < (3, 0):
     sys.stdout = StreamWriter(sys.stdout)
     sys.stderr = StreamWriter(sys.stderr)
 
