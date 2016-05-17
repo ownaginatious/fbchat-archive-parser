@@ -135,11 +135,11 @@ class FacebookChatHistory:
             self._clear_output()
             sys.stderr.write('The streaming parser crashed due to malformed '
                              'XML. Falling back to the less strict/efficient '
-                             'BeautifulSoup parser. This may take a while... '
-                             '\n')
+                             'python html.parser. It may take a while before '
+                             'you see output... \n')
             sys.stderr.flush()
             from bs4 import BeautifulSoup
-            soup = BeautifulSoup(open(self.stream, 'r').read(), 'lxml')
+            soup = BeautifulSoup(open(self.stream, 'r').read(), 'html.parser')
             self.__process_element('end', soup.find('h1'))
             for thread_element in soup.find_all('div', class_='thread'):
                 self.__process_element('start', thread_element)
