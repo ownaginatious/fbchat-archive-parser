@@ -290,6 +290,10 @@ class FacebookChatHistory:
                     self.current_timestamp, offset =\
                         self.current_timestamp.split(" UTC")
                     offset = [int(x) for x in offset[1:].split(':')]
+                    if len(offset) == 1:
+                        # Timezones without minute offset may be formatted
+                        # as UTC+X (e.g UTC+8)
+                        offset += [0]
                     if '+' in self.current_timestamp:
                         delta = timedelta(hours=offset[0], minutes=offset[1])
                     else:
