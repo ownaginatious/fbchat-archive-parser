@@ -1,21 +1,29 @@
 from __future__ import unicode_literals
 
+from collections import namedtuple, defaultdict
+from datetime import datetime, timedelta
+import hashlib
+from io import open
 import sys
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import XMLParser
-import pytz
-import hashlib
 
-from io import open
-from datetime import datetime, timedelta
-from sortedcontainers import SortedList
 from colorama import Fore, Back, Style
+from sortedcontainers import SortedList
+import pytz
+from pytz import all_timezones, timezone
 
-from collections import namedtuple, defaultdict
+
+TIMEZONE_MAP = defaultdict(lambda: defaultdict(set))
+for tz_name in all_timezones:
+    for dst in (True, False):
+        tz = timezone(tz_name).localize(datetime.now(), is_dst=dst)
+        TIMEZONE_MAP[tz.strftime("%Z")][tz.strftime("%z")].add(tz_name)
 
 
 class UnexpectedTimeZoneError(Exception):
     pass
+
 
 # More recent messages have a lower magnitude sequence number.
 _ChatMessageT = namedtuple('_ChatMessageT',
@@ -259,7 +267,7 @@ class FacebookChatHistory:
                 self.current_signature = self.current_signature.hexdigest()
                 if self.current_signature in self.thread_signatures:
                     # FIXME: Suppressed until use of a logging library is
-                    #       implemented
+                    #        implemented
                     # sys.stderr.write("Duplicate thread detected: %s\n "
                     #                 % str(self.current_thread.participants))
                     return
@@ -276,33 +284,38 @@ class FacebookChatHistory:
             if "user" in class_attr:
                 self.current_sender = e.text
             elif "meta" in class_attr:
-                self.current_timestamp = e.text
-                if "PDT" in self.current_timestamp:
-                    self.current_timestamp =\
-                        self.current_timestamp.replace(" PDT", "")
-                    delta = timedelta(hours=-7)
-                elif "PST" in self.current_timestamp:
-                    self.current_timestamp =\
-                        self.current_timestamp.replace(" PST", "")
-                    delta = timedelta(hours=-8)
-                elif "UTC+" in self.current_timestamp or\
-                     "UTC-" in self.current_timestamp:
-                    self.current_timestamp, offset =\
-                        self.current_timestamp.split(" UTC")
-                    offset = [int(x) for x in offset[1:].split(':')]
-                    if len(offset) == 1:
-                        # Timezones without minute offset may be formatted
-                        # as UTC+X (e.g UTC+8)
-                        offset += [0]
-                    if '+' in self.current_timestamp:
-                        delta = timedelta(hours=offset[0], minutes=offset[1])
+                self.current_timestamp, offset = e.text.rsplit(" ", 1)
+                if "UTC+" in offset or "UTC-" in offset:
+                    if offset[3] == '-':
+                        offset = [-1 * int(x) for x in offset[4:].split(':')]
                     else:
-                        delta = timedelta(hours=-1 * offset[0],
-                                          minutes=-1 * offset[1])
+                        offset = [int(x) for x in offset[4:].split(':')]
                 else:
-                    raise UnexpectedTimeZoneError(
-                        "Unexpected timezone format (found %s). Please "
-                        "report this bug." % self.current_timestamp)
+                    if offset not in TIMEZONE_MAP:
+                        raise UnexpectedTimeZoneError(
+                            "Unexpected timezone format (found %s). Please "
+                            "report this bug." % self.current_timestamp)
+                    elif len(TIMEZONE_MAP[offset]) > 1:
+                        sys.stderr.write(
+                            "Ambiguous timezone offset found [%s]. Please re-run the "
+                            "parser with the -t TZ=OFFSET[,TZ=OFFSET2[,...]] flag."
+                            "(e.g. -t PST=-0800,PDT=-0700). Your options are as follows:\n"  % offset)
+                        for k, v in TIMEZONE_MAP[offset].items():
+                            sys.stderr.write("> [%s] for regions like %s\n" % (k, ', '.join(list(v)[:3])))
+                        sys.exit(0)
+                    offset = list(TIMEZONE_MAP[offset].keys())[0]
+                    if offset[0] == '-':
+                        offset = (-1 * int(offset[1:3]), -1 * int(offset[3:5]))
+                    else:
+                        offset = (int(offset[1:3]), int(offset[3:5]))
+ 
+                if len(offset) == 1:
+                    # Timezones without minute offset may be formatted
+                    # as UTC+X (e.g UTC+8)
+                    offset += [0]
+
+                delta = timedelta(hours=offset[0], minutes=offset[1])
+ 
                 self.current_timestamp = datetime.strptime(
                                                   self.current_timestamp,
                                                   self.__DATE_FORMAT)
