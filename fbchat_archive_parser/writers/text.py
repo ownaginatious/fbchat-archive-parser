@@ -1,8 +1,10 @@
 from __future__ import unicode_literals
-from .writer import Writer
-from colorama import Fore, Back, Style
+
 import sys
 import csv
+
+from .writer import Writer
+from ..utils import yellow, red, cyan, bright
 
 THREAD_ID_KEY = "thread"
 SENDER_KEY = "sender"
@@ -19,10 +21,10 @@ class TextWriter(Writer):
         dash_line = "-------------------------" + \
                     ('-' * len(history.user)) + "-\n"
 
-        stream.write(Style.BRIGHT + dash_line)
-        stream.write(" Conversation history of " +
-                     Fore.CYAN + history.user + Fore.RESET + "\n")
-        stream.write(dash_line + Style.RESET_ALL)
+        stream.write(bright(dash_line))
+        stream.write(bright(" Conversation history of %s\n")\
+                     % cyan(history.user))
+        stream.write(bright(dash_line))
 
         if len(history.chat_threads) > 0:
             for k in history.chat_threads.keys():
@@ -34,10 +36,7 @@ class TextWriter(Writer):
     def write_thread(self, thread, stream=sys.stdout):
 
         stream.write("\nConversation with %s:\n\n" %
-                     (Fore.YELLOW +
-                      ", ".join(thread.participants) +
-                      Fore.RESET))
-
+                     yellow(", ".join(thread.participants)))
         for message in thread.messages:
             self.write_message(message, stream)
 
@@ -45,7 +44,7 @@ class TextWriter(Writer):
 
         lines = message.content.split('\n') if message.content else [""]
 
-        stream.write((Fore.RED + "[%s] " + Fore.CYAN + "%s: " + Fore.WHITE) % (
+        stream.write((red("[%s] ") + cyan("%s: ")) % (
                      message.timestamp.strftime(self.DATE_DOC_FORMAT),
                      message.sender))
 

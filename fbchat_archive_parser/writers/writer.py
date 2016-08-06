@@ -17,7 +17,7 @@ class Writer(object):
         elif isinstance(data, ChatMessage):
             return self.write_message(data)
         else:
-            raise UnserializableObject
+            raise UnserializableObject()
 
     def write_history(self, data):
         raise NotImplementedError

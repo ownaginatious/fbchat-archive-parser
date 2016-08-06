@@ -8,21 +8,36 @@ import sys
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import XMLParser
 
-from colorama import Fore, Back, Style
 from sortedcontainers import SortedList
 import pytz
 from pytz import all_timezones, timezone
+
+from .utils import error, yellow, magenta
 
 
 TIMEZONE_MAP = defaultdict(lambda: defaultdict(set))
 for tz_name in all_timezones:
     for dst in (True, False):
         tz = timezone(tz_name).localize(datetime.now(), is_dst=dst)
-        TIMEZONE_MAP[tz.strftime("%Z")][tz.strftime("%z")].add(tz_name)
+        offset_raw = tz.strftime("%z")
+        if offset_raw[0] == '-':
+            offset = (-1 * int(offset_raw[1:3]), -1 * int(offset_raw[3:5]))
+        else:
+            offset = (int(offset_raw[1:3]), int(offset_raw[3:5]))
+        offset += (offset_raw,)
+        TIMEZONE_MAP[tz.strftime("%Z")][offset].add(tz_name)
 
 
 class UnexpectedTimeZoneError(Exception):
     pass
+
+
+class AmbiguousTimeZoneError(Exception):
+
+    def __init__(self, tz_name, tz_options):
+        self.tz_name = tz_name
+        self.tz_options = tz_options
+        super(AmbiguousTimeZoneError, self).__init__()
 
 
 # More recent messages have a lower magnitude sequence number.
@@ -83,9 +98,10 @@ class FacebookChatHistory:
     the history and their contacts.
 
     """
-    __DATE_FORMAT = "%A, %B %d, %Y at %I:%M%p"
+    _DATE_FORMAT = "%A, %B %d, %Y at %I:%M%p"
 
-    def __init__(self, stream, progress_output=False, filter=None):
+    def __init__(self, stream, timezone_hints=None, progress_output=False,
+                 filter=None, bs4=False):
 
         self.chat_threads = dict()
         self.message_cache = None
@@ -102,8 +118,10 @@ class FacebookChatHistory:
         self.seq_num = 0
         self.wait_for_next_thread = False
         self.thread_signatures = set()
-
-        self.__parse_content()
+        self.timezone_hints = {}
+        if timezone_hints:
+            self.timezone_hints = timezone_hints
+        self._parse_content(bs4)
 
     def _clear_output(self):
         """
@@ -113,57 +131,41 @@ class FacebookChatHistory:
         if self.progress_output:
             sys.stdout.write("\r".ljust(self.last_line_len))
             sys.stdout.write("\r")
-            sys.stdout.write(Style.RESET_ALL)
-            sys.stdout.write(Fore.RESET)
-            sys.stdout.write(Back.RESET)
             sys.stdout.flush()
 
-    def __parse_content(self):
+    def _parse_content(self, use_bs4):
         """
         Parses the HTML content as a stream. This is far less memory
         intensive than loading the entire HTML file into memory, like
         BeautifulSoup does.
         """
-        try:
+        if not use_bs4:
             for pos, element in ET.iterparse(
                     self.stream, events=("start", "end"),
                     parser=XMLParser(encoding=str('UTF-8'))):
-                self.__process_element(pos, element)
-        except ET.ParseError:
+                self._process_element(pos, element)
+        else:
             # Although apparently uncommon, some users have message logs that
             # may not conform to strict XML standards. We will fall back to
             # the BeautifulSoup parser in that case.
-
-            # Purge all collected data.
-            self.chat_threads = dict()
-            self.thread_signatures = set()
-            self.message_cache = None
-            self.user = None
-
-            self._clear_output()
-            sys.stderr.write('The streaming parser crashed due to malformed '
-                             'XML. Falling back to the less strict/efficient '
-                             'python html.parser. It may take a while before '
-                             'you see output... \n')
-            sys.stderr.flush()
             from bs4 import BeautifulSoup
             soup = BeautifulSoup(open(self.stream, 'r').read(), 'html.parser')
-            self.__process_element('end', soup.find('h1'))
+            self._process_element('end', soup.find('h1'))
             for thread_element in soup.find_all('div', class_='thread'):
-                self.__process_element('start', thread_element)
+                self._process_element('start', thread_element)
                 for e in thread_element:
                     if e.name == 'div':
                         user = e.find('span', class_='user')
                         meta = e.find('span', class_='meta')
-                        self.__process_element('end', user)
-                        self.__process_element('end', meta)
+                        self._process_element('end', user)
+                        self._process_element('end', meta)
                     elif e.name == 'p':
-                        self.__process_element('end', e)
-                self.__process_element('end', thread_element)
+                        self._process_element('end', e)
+                self._process_element('end', thread_element)
 
         self._clear_output()
 
-    def __should_record_thread(self, participants):
+    def _should_record_thread(self, participants):
         """
         Determines if the thread should be parsed based on the
         participants and the filter given.
@@ -202,7 +204,46 @@ class FacebookChatHistory:
             matched |= matches[f]
         return len(matched) == len(participants)
 
-    def __process_element(self, pos, e):
+    def _parse_time(self, time_element):
+        """
+        Facebook is highly inconsistent with their timezone formatting.
+        Sometimes it's in UTC+/-HH:MM form, and other times its in the
+        ambiguous PST, PDT. etc format.
+
+        We have to handle the ambiguity by asking for cues from the user.
+
+        time_element -- The time element to parse and convert to UTC.
+        """
+        raw_timestamp = time_element.text
+        timestamp, offset = raw_timestamp.rsplit(" ", 1)
+        if "UTC+" in offset or "UTC-" in offset:
+            if offset[3] == '-':
+                offset = [-1 * int(x) for x in offset[4:].split(':')]
+            else:
+                offset = [int(x) for x in offset[4:].split(':')]
+        else:
+            offset_hint = self.timezone_hints.get(offset, None)
+            if not offset_hint:
+                if offset not in TIMEZONE_MAP:
+                    raise UnexpectedTimeZoneError(raw_timestamp)
+                elif len(TIMEZONE_MAP[offset]) > 1:
+                    raise AmbiguousTimeZoneError(offset, TIMEZONE_MAP[offset])
+                offset = list(TIMEZONE_MAP[offset].keys())[0][:2]
+            else:
+                offset = offset_hint
+
+        if len(offset) == 1:
+            # Timezones without minute offset may be formatted
+            # as UTC+X (e.g UTC+8)
+            offset += [0]
+
+        delta = timedelta(hours=offset[0], minutes=offset[1])
+
+        timestamp = datetime.strptime(timestamp, self._DATE_FORMAT)
+        timestamp += delta
+        self.current_timestamp = timestamp.replace(tzinfo=pytz.utc)
+
+    def _process_element(self, pos, e):
         """
         Parses an incoming HTML element/node for data.
 
@@ -229,31 +270,28 @@ class FacebookChatHistory:
                         participants.remove(self.user)
                     participants = tuple(participants)
                     self.wait_for_next_thread = \
-                        not self.__should_record_thread(participants)
+                        not self._should_record_thread(participants)
                     if len(participants) > 4:
                         participants_text = participants_text[0:30] \
                             + "... <%s>" % str(len(participants))
-                    participants_text = Fore.YELLOW + '[' + \
-                        participants_text + ']' + Fore.WHITE
+                    participants_text = yellow("[%s]" % participants_text)
                 else:
                     participants_text = "unknown participants"
                     self.wait_for_next_thread = True
                 if self.wait_for_next_thread:
-                    line = ("\rSkipping chat thread with {}" +
-                            Fore.MAGENTA + "..." +
-                            Fore.WHITE).format(participants_text)
+                    line = "\rSkipping chat thread with %s..." % \
+                            yellow(participants_text)
                 else:
                     participants_key = ", ".join(participants)
                     if participants_key in self.chat_threads:
                         self.current_thread =\
                             self.chat_threads[participants_key]
-                        line = ("\rContinuing chat thread with {}" +
-                                Fore.MAGENTA + "<@{} messages>..." +
-                                Fore.WHITE).format(participants_text,
-                                                   len(self.current_thread))
+                        line = "\rContinuing chat thread with %s %s..." % (
+                               yellow(participants_text),
+                               magenta("<@%d messages>" % len(self.current_thread)))
                     else:
-                        line = "\rDiscovered chat thread with {}..." \
-                                    .format(participants_text)
+                        line = "\rDiscovered chat thread with %s..." \
+                                % yellow(participants_text)
                         self.current_thread = ChatThread(participants)
                 if self.progress_output:
                     sys.stdout.write(line.ljust(self.last_line_len))
@@ -262,14 +300,14 @@ class FacebookChatHistory:
             elif pos == "end" and not self.wait_for_next_thread:
                 # Facebook has a tendency to return the same thread more than
                 # once during history collection. Check the collective hash of
-                # all messages in the thread to ensure that we have already
+                # all messages in the thread to ensure that we have not already
                 # recorded it.
                 self.current_signature = self.current_signature.hexdigest()
                 if self.current_signature in self.thread_signatures:
                     # FIXME: Suppressed until use of a logging library is
                     #        implemented
-                    # sys.stderr.write("Duplicate thread detected: %s\n "
-                    #                 % str(self.current_thread.participants))
+                    # error("Duplicate thread detected: %s\n "
+                    #        % str(self.current_thread.participants))
                     return
                 # Mark it as a signature as seen.
                 self.thread_signatures.add(self.current_signature)
@@ -280,56 +318,16 @@ class FacebookChatHistory:
         elif self.wait_for_next_thread:
             return
         elif tag == "span" and pos == "end":
-
             if "user" in class_attr:
                 self.current_sender = e.text
             elif "meta" in class_attr:
-                self.current_timestamp, offset = e.text.rsplit(" ", 1)
-                if "UTC+" in offset or "UTC-" in offset:
-                    if offset[3] == '-':
-                        offset = [-1 * int(x) for x in offset[4:].split(':')]
-                    else:
-                        offset = [int(x) for x in offset[4:].split(':')]
-                else:
-                    if offset not in TIMEZONE_MAP:
-                        raise UnexpectedTimeZoneError(
-                            "Unexpected timezone format (found %s). Please "
-                            "report this bug." % self.current_timestamp)
-                    elif len(TIMEZONE_MAP[offset]) > 1:
-                        sys.stderr.write(
-                            "Ambiguous timezone offset found [%s]. Please re-run the "
-                            "parser with the -t TZ=OFFSET[,TZ=OFFSET2[,...]] flag."
-                            "(e.g. -t PST=-0800,PDT=-0700). Your options are as follows:\n"  % offset)
-                        for k, v in TIMEZONE_MAP[offset].items():
-                            sys.stderr.write("> [%s] for regions like %s\n" % (k, ', '.join(list(v)[:3])))
-                        sys.exit(0)
-                    offset = list(TIMEZONE_MAP[offset].keys())[0]
-                    if offset[0] == '-':
-                        offset = (-1 * int(offset[1:3]), -1 * int(offset[3:5]))
-                    else:
-                        offset = (int(offset[1:3]), int(offset[3:5]))
- 
-                if len(offset) == 1:
-                    # Timezones without minute offset may be formatted
-                    # as UTC+X (e.g UTC+8)
-                    offset += [0]
-
-                delta = timedelta(hours=offset[0], minutes=offset[1])
- 
-                self.current_timestamp = datetime.strptime(
-                                                  self.current_timestamp,
-                                                  self.__DATE_FORMAT)
-                self.current_timestamp += delta
-                self.current_timestamp = \
-                    self.current_timestamp.replace(tzinfo=pytz.utc)
-
+                self._parse_time(e)
         elif tag == "p" and pos == "end":
-            if self.current_sender is None or self.current_timestamp is None:
+            if not self.current_sender or not self.current_timestamp:
                 raise Exception("Data missing from message. This is a parsing"
-                                "error: %s, %s"
-                                % (self.current_timestamp,
-                                   self.current_sender))
-
+                                "error: %s, %s" % (self.current_timestamp,
+                                                   self.current_sender)
+                      )
             cm = ChatMessage(timestamp=self.current_timestamp,
                              sender=self.current_sender,
                              content=e.text.strip() if e.text else "",
@@ -343,5 +341,5 @@ class FacebookChatHistory:
             self.current_sender, self.current_timestamp = None, None
 
         elif tag == "h1" and pos == "end":
-            if self.user is None:
+            if not self.user:
                 self.user = e.text.strip()

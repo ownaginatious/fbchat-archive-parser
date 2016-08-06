@@ -51,5 +51,4 @@ class CsvWriter(Writer):
         if parent:
             row[THREAD_ID_KEY] = "<unknown>" if not parent \
                                  else ", ".join(parent.participants)
-
         writer.writerow(row)
