@@ -65,8 +65,7 @@ def fbcap(path, thread, format, nocolor, timezones, noprogress):
             error('The streaming parser crashed due to malformed XML. Falling '
                   'back to the less strict/efficient python html.parser. It '
                   'may take a while before you see output... \n')
-            fbch = parse_data(parser_call(bs4=True))
-
+            fbch = parse_data(partial(parser_call, bs4=True))
         if format == 'stats':
             generate_stats(fbch, sys.stdout)
         else:
