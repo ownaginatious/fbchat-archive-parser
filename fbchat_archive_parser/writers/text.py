@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 import sys
-import csv
 
 from .writer import Writer
 from ..utils import yellow, red, cyan, bright
@@ -22,7 +21,7 @@ class TextWriter(Writer):
                     ('-' * len(history.user)) + "-\n"
 
         stream.write(bright(dash_line))
-        stream.write(bright(" Conversation history of %s\n")\
+        stream.write(bright(" Conversation history of %s\n")
                      % cyan(history.user))
         stream.write(bright(dash_line))
 

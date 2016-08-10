@@ -1,6 +1,7 @@
 from collections import Counter
 from encodings.utf_8 import StreamWriter
 from functools import partial
+import re
 import sys
 import xml.etree.ElementTree as ET
 
@@ -9,7 +10,8 @@ import clip
 from .writers import BUILTIN_WRITERS, write
 from .parser import FacebookChatHistory, AmbiguousTimeZoneError, \
                     UnexpectedTimeZoneError
-from .utils import set_color, green, bright, cyan, error, reset_terminal_styling
+from .utils import set_color, green, bright, cyan, error, \
+                   reset_terminal_styling
 
 # Let's force the output to be UTF-8 to both console and file for Python 2.
 # Python 3 is smart enough to not default to the 'ascii' encoder.
@@ -25,7 +27,7 @@ app = clip.App()
 @clip.opt('-f', '--format', default='text',
           help='Format to convert to (%s)' %
                ', '.join(BUILTIN_WRITERS + ('stats',)))
-@clip.opt('-t', '--thread',
+@clip.opt('-t', '--thread', default=None,
           help='Only include threads involving exactly the following '
                'comma-separated participants in output '
                '(-t \'Billy,Steve Jensson\')')
@@ -48,30 +50,36 @@ def fbcap(path, thread, format, nocolor, timezones, noprogress):
                 name, offset_raw = tz.split('=')
                 # Solely for validating the timezone early on.
                 neg = -1 if offset_raw[0] == '-' else 1
-                offset = (neg * int(offset_raw[1:3]), neg * int(offset_raw[3:]))
+                offset = (neg * int(offset_raw[1:3]),
+                          neg * int(offset_raw[3:]))
                 timezone_hints[name] = offset
         except Exception:
             error("Invalid timezone string: %s\n" % timezones)
             sys.exit(1)
 
+    # Filter duplicate spaces in thread filters.
+    if thread:
+        thread = re.sub("\s+", " ", thread)
+        thread = tuple(friend.strip() for friend in thread.split(","))
+
     parser_call = partial(FacebookChatHistory, stream=path,
-                          filter=tuple(thread.split(",")) if thread else None,
-                          timezone_hints=timezone_hints,
-                          progress_output=sys.stdout.isatty() and not noprogress)
+                          filter=thread, timezone_hints=timezone_hints,
+                          progress_output=not noprogress)
     try:
         try:
             fbch = parse_data(parser_call)
         except ET.ParseError:
-            error('The streaming parser crashed due to malformed XML. Falling '
-                  'back to the less strict/efficient python html.parser. It '
-                  'may take a while before you see output... \n')
+            error('\nThe streaming parser crashed due to malformed XML. '
+                  'Falling back to the less strict/efficient python '
+                  'html.parser. It may take a while before you see '
+                  'output... \n')
             fbch = parse_data(partial(parser_call, bs4=True))
         if format == 'stats':
             generate_stats(fbch, sys.stdout)
         else:
             write(format, fbch)
     except KeyboardInterrupt:
-        error("Interupted prematurely by keyboard")
+        error("\nInterupted prematurely by keyboard\n")
         reset_terminal_styling()
         sys.exit(1)
     except Exception as e:
@@ -83,11 +91,10 @@ def parse_data(parser_call):
     try:
         return parser_call()
     except AmbiguousTimeZoneError as atze:
-        error(
-            "\nAmbiguous timezone offset found [%s]. Please re-run the "
-            "parser with the -z TZ=OFFSET[,TZ=OFFSET2[,...]] flag."
-            "(e.g. -t PST=-0800,PDT=-0700). Your options are as "
-            "follows:\n"  % atze.tz_name)
+        error("\nAmbiguous timezone offset found [%s]. Please re-run the "
+              "parser with the -z TZ=OFFSET[,TZ=OFFSET2[,...]] flag."
+              "(e.g. -t PST=-0800,PDT=-0700). Your options are as "
+              "follows:\n" % atze.tz_name)
         for k, v in atze.tz_options.items():
             regions = ', '.join(list(v)[:3])
             error(" -> [%s] for regions like %s\n" % (k[-1], regions))

@@ -12,7 +12,7 @@ from sortedcontainers import SortedList
 import pytz
 from pytz import all_timezones, timezone
 
-from .utils import error, yellow, magenta
+from .utils import yellow, magenta
 
 
 TIMEZONE_MAP = defaultdict(lambda: defaultdict(set))
@@ -114,7 +114,7 @@ class FacebookChatHistory:
 
         self.stream = stream
         self.progress_output = progress_output
-        self.filter = set(p.lower() for p in filter) if filter else None
+        self.filter = tuple(p.lower() for p in filter) if filter else None
         self.seq_num = 0
         self.wait_for_next_thread = False
         self.thread_signatures = set()
@@ -129,9 +129,9 @@ class FacebookChatHistory:
         """
         # If progress output was being written, clear it from the screen.
         if self.progress_output:
-            sys.stdout.write("\r".ljust(self.last_line_len))
-            sys.stdout.write("\r")
-            sys.stdout.flush()
+            sys.stderr.write("\r".ljust(self.last_line_len))
+            sys.stderr.write("\r")
+            sys.stderr.flush()
 
     def _parse_content(self, use_bs4):
         """
@@ -186,7 +186,7 @@ class FacebookChatHistory:
         participants -- the participants of the thread
                         (excluding the history owner)
         """
-        if self.filter is None:
+        if not self.filter:
             return True
         if len(participants) != len(self.filter):
             return False
@@ -286,16 +286,17 @@ class FacebookChatHistory:
                     if participants_key in self.chat_threads:
                         self.current_thread =\
                             self.chat_threads[participants_key]
-                        line = "\rContinuing chat thread with %s %s..." % (
-                               yellow(participants_text),
-                               magenta("<@%d messages>" % len(self.current_thread)))
+                        line = "\rContinuing chat thread with %s %s..." \
+                               % (yellow(participants_text),
+                                  magenta("<@%d messages>"
+                                          % len(self.current_thread)))
                     else:
                         line = "\rDiscovered chat thread with %s..." \
                                 % yellow(participants_text)
                         self.current_thread = ChatThread(participants)
                 if self.progress_output:
-                    sys.stdout.write(line.ljust(self.last_line_len))
-                    sys.stdout.flush()
+                    sys.stderr.write(line.ljust(self.last_line_len))
+                    sys.stderr.flush()
                 self.last_line_len = len(line)
             elif pos == "end" and not self.wait_for_next_thread:
                 # Facebook has a tendency to return the same thread more than
@@ -326,8 +327,7 @@ class FacebookChatHistory:
             if not self.current_sender or not self.current_timestamp:
                 raise Exception("Data missing from message. This is a parsing"
                                 "error: %s, %s" % (self.current_timestamp,
-                                                   self.current_sender)
-                      )
+                                                   self.current_sender))
             cm = ChatMessage(timestamp=self.current_timestamp,
                              sender=self.current_sender,
                              content=e.text.strip() if e.text else "",
