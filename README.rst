@@ -125,6 +125,24 @@ Of course!
 
     fbcap ./messages.htm -f csv
 
+.. code:: text
+
+    thread,sender,date,message                                                      Third User,Third User,2013-10-04T15:05Z,1
+    Third User,Third User,2013-10-04T15:05Z,2
+    Third User,Third User,2013-10-04T15:05Z,3
+    Third User,First User,2013-10-04T15:05Z,4
+    Third User,Third User,2013-10-04T15:06Z,5
+    Third User,First User,2013-10-04T15:07Z,6
+    Third User,First User,2013-10-04T15:07Z,7
+    Second User,Second User,2013-10-04T15:04Z,X Y Z
+    Second User,Second User,2013-10-04T15:05Z,X? Y Z!
+    Second User,Second User,2013-10-04T15:05Z,This is a test
+    Second User,Second User,2013-10-04T15:05Z,"Yes, it is"
+    Second User,Second User,2013-10-04T15:05Z,The last message!
+    "Second User, Third User",Third User,2013-10-04T15:05Z,1
+    "Second User, Third User",Third User,2013-10-04T15:05Z,2
+    ...
+
 What if I want to see some statistics?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -135,7 +153,7 @@ contribute to the conversation.
 
     fbcap ./messages.htm -f stats
 
-.. figure:: http://www.ultraimg.com/images/ScreenShot2016-01-25at1.27.57PM.png
+.. figure:: http://i.imgur.com/U2T6KwC.png
    :alt: stats image
 
 How do I get any of the above into a file?
@@ -159,14 +177,14 @@ remember the last name), the system will try to compensate.
 
     fbcap ./messages.html -t second
 
-.. figure:: http://www.ultraimg.com/images/ScreenShot2016-01-25at1.43.25PM.png
+.. figure:: http://i.imgur.com/3FbWIN7.png
    :alt: filter second
 
 .. code:: bash
 
     fbcap ./messages.html -t second,third
 
-.. figure:: http://www.ultraimg.com/images/ScreenShot2016-01-25at1.43.33PM.png
+.. figure:: http://i.imgur.com/IJzD1LE.png
    :alt: filter second and third
 
 What else can I do?
