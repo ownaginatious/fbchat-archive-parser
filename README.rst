@@ -75,13 +75,13 @@ Simply run the command ``fbcap`` in your terminal with your
 
 And watch as the parser sifts through your data!
 
-.. figure:: https://zippy.gfycat.com/VariableAlarmedGander.gif
+.. figure:: https://zippy.gfycat.com/SpitefulSnivelingBluebreastedkookaburra.gif
    :alt: Processing gif
 
 When it's done, it will dump all your conversation history is dumped to
 ``stdout``. Obviously, this can be very long, so here is an example:
 
-.. figure:: http://imgur.com/pXnGJFs.png
+.. figure:: http://i.imgur.com/ZgHjUST.png
    :alt: Results
 
 What if I want JSON?
@@ -127,7 +127,8 @@ Of course!
 
 .. code:: text
 
-    thread,sender,date,message                                                      Third User,Third User,2013-10-04T15:05Z,1
+    thread,sender,date,message
+    Third User,Third User,2013-10-04T15:05Z,1
     Third User,Third User,2013-10-04T15:05Z,2
     Third User,Third User,2013-10-04T15:05Z,3
     Third User,First User,2013-10-04T15:05Z,4
