@@ -13,9 +13,15 @@ from .parser import FacebookChatHistory, AmbiguousTimeZoneError, \
 from .utils import set_color, green, bright, cyan, error, \
                    reset_terminal_styling
 
-# Let's force the output to be UTF-8 to both console and file for Python 2.
 # Python 3 is supposed to be smart enough to not ever default to the 'ascii'
 # encoder, but apparently on Windows that may not be the case.
+if sys.version_info >= (3, 0):
+
+  # Change the output streams to binary.
+  sys.stderr = sys.stderr.detach()
+  sys.stdout = sys.stdout.detach()
+
+# Let's force the output to be UTF-8 to both console and file.
 sys.stdout = StreamWriter(sys.stdout)
 sys.stderr = StreamWriter(sys.stderr)
 
