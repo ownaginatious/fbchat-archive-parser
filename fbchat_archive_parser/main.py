@@ -14,10 +14,10 @@ from .utils import set_color, green, bright, cyan, error, \
                    reset_terminal_styling
 
 # Let's force the output to be UTF-8 to both console and file for Python 2.
-# Python 3 is smart enough to not default to the 'ascii' encoder.
-if sys.version_info < (3, 0):
-    sys.stdout = StreamWriter(sys.stdout)
-    sys.stderr = StreamWriter(sys.stderr)
+# Python 3 is supposed to be smart enough to not ever default to the 'ascii'
+# encoder, but apparently on Windows that may not be the case.
+sys.stdout = StreamWriter(sys.stdout)
+sys.stderr = StreamWriter(sys.stderr)
 
 app = clip.App()
 
