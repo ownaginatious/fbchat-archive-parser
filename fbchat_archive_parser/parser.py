@@ -10,15 +10,16 @@ from xml.etree.ElementTree import XMLParser
 
 from sortedcontainers import SortedList
 import pytz
-from pytz import all_timezones, timezone
+from pytz import all_timezones, timezone as pytz_timezone
 
 from .utils import yellow, magenta
+from .tzinfo import TzInfoByOffset as dt_timezone
 
 
 TIMEZONE_MAP = defaultdict(lambda: defaultdict(set))
 for tz_name in all_timezones:
     for dst in (True, False):
-        tz = timezone(tz_name).localize(datetime.now(), is_dst=dst)
+        tz = pytz_timezone(tz_name).localize(datetime.now(), is_dst=dst)
         offset_raw = tz.strftime("%z")
         if offset_raw[0] == '-':
             offset = (-1 * int(offset_raw[1:3]), -1 * int(offset_raw[3:5]))
@@ -101,8 +102,8 @@ class FacebookChatHistory:
     _DATE_FORMATS = ["%A, %B %d, %Y at %I:%M%p",
                      "%A, %d %B %Y at %H:%M"]
 
-    def __init__(self, stream, timezone_hints=None, progress_output=False,
-                 filter=None, bs4=False):
+    def __init__(self, stream, timezone_hints=None, use_utc=True,
+                 progress_output=False, filter=None, bs4=False):
 
         self.chat_threads = dict()
         self.message_cache = None
@@ -120,6 +121,7 @@ class FacebookChatHistory:
         self.wait_for_next_thread = False
         self.thread_signatures = set()
         self.timezone_hints = {}
+        self.use_utc = use_utc
         if timezone_hints:
             self.timezone_hints = timezone_hints
         self._parse_content(bs4)
@@ -150,7 +152,10 @@ class FacebookChatHistory:
             # may not conform to strict XML standards. We will fall back to
             # the BeautifulSoup parser in that case.
             from bs4 import BeautifulSoup
-            soup = BeautifulSoup(open(self.stream, 'r').read(), 'html.parser')
+
+            # Let's force this to be handled as UTF-8
+            data = open(self.stream, 'r', encoding='UTF-8').read()
+            soup = BeautifulSoup(data, 'html.parser')
             self._process_element('end', soup.find('h1'))
             for thread_element in soup.find_all('div', class_='thread'):
                 self._process_element('start', thread_element)
@@ -250,9 +255,12 @@ class FacebookChatHistory:
                 pass
         if timestamp is None:
             raise UnexpectedTimeFormatError(raw_timestamp)
-
-        timestamp += delta
-        self.current_timestamp = timestamp.replace(tzinfo=pytz.utc)
+        if self.use_utc:
+            timestamp += delta
+            self.current_timestamp = timestamp.replace(tzinfo=pytz.utc)
+        else:
+            self.current_timestamp = \
+                timestamp.replace(tzinfo=dt_timezone(delta))
 
     def _process_element(self, pos, e):
         """

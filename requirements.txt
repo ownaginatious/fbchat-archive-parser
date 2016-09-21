@@ -4,8 +4,9 @@
 #
 #    pip-compile --output-file requirements.txt requirements.in
 #
-beautifulsoup4==4.5.0
+beautifulsoup4==4.5.1
 clip.py==0.3.2
 colorama==0.3.7
 pytz==2016.6.1
+pyyaml==3.12
 sortedcontainers==1.5.3

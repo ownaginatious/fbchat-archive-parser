@@ -1,5 +1,4 @@
 from collections import Counter
-from encodings.utf_8 import StreamWriter
 from functools import partial
 import re
 import sys
@@ -17,16 +16,26 @@ from .utils import set_color, green, bright, cyan, error, \
 # encoder, but apparently on Windows that may not be the case.
 if sys.version_info >= (3, 0):
 
+  import io
   # Change the output streams to binary.
   sys.stderr = sys.stderr.detach()
   sys.stdout = sys.stdout.detach()
 
-# Let's force the output to be UTF-8 to both console and file.
-sys.stdout = StreamWriter(sys.stdout)
-sys.stderr = StreamWriter(sys.stderr)
+  # Wrap them in a safe UTF-8 encoders. PDB doesn't like it when
+  # the streams are wrapped in StreamWriter.
+  sys.stdout = io.TextIOWrapper(sys.stdout, encoding='UTF-8', errors='replace')
+  sys.stderr = io.TextIOWrapper(sys.stderr, encoding='UTF-8', errors='replace')
+
+else:
+
+  # Wrap the raw Python 2 output streams in smart UTF-8 encoders.
+  # Python 2 doesn't like it when the raw file handles are wrapped in
+  # TextIOWrapper.
+  from encodings.utf_8 import StreamWriter
+  sys.stderr = StreamWriter(sys.stderr)
+  sys.stdout = StreamWriter(sys.stdout)
 
 app = clip.App()
-
 
 @app.main(description='A program for converting Facebook chat history to a '
                       'number of more usable formats')
@@ -39,11 +48,15 @@ app = clip.App()
                '(-t \'Billy,Steve Jensson\')')
 @clip.opt('-z', '--timezones',
           help='Timezone disambiguators (TZ=OFFSET,[TZ=OFFSET[...]])')
+@clip.flag('-u', '--utc', help='Use UTC timestamps in the output')
 @clip.flag('-n', '--nocolor', help='Do not colorize output')
 @clip.flag('-p', '--noprogress', help='Do not show progress output')
 @clip.arg('path', required=True, help='Path of the messages.htm file to parse')
-def fbcap(path, thread, format, nocolor, timezones, noprogress):
-    set_color(nocolor)
+def fbcap(path, thread, format, nocolor, timezones, utc, noprogress):
+
+    # Make stderr colorized unless explicitly disabled.
+    set_color(sys.stderr, disabled=nocolor or not sys.stderr.isatty())
+    set_color(sys.stdout, disabled=nocolor or not sys.stdout.isatty())
 
     if format not in BUILTIN_WRITERS + ('stats',):
         error("\"%s\" is not a valid output format.\n" % format)
@@ -70,7 +83,7 @@ def fbcap(path, thread, format, nocolor, timezones, noprogress):
 
     parser_call = partial(FacebookChatHistory, stream=path,
                           filter=thread, timezone_hints=timezone_hints,
-                          progress_output=not noprogress)
+                          progress_output=not noprogress, use_utc=utc)
     try:
         try:
             fbch = parse_data(parser_call)

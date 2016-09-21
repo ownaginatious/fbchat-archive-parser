@@ -1,7 +1,7 @@
 import importlib
 
 
-BUILTIN_WRITERS = ("json", "csv", "text",)
+BUILTIN_WRITERS = ("json", "csv", "text", "yaml",)
 
 
 class SerializerDoesNotExist(KeyError):

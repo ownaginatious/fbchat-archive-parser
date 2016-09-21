@@ -144,6 +144,34 @@ Of course!
     "Second User, Third User",Third User,2013-10-04T15:05Z,2
     ...
 
+What about that YAML thing the kids these days are talking about?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For sure!
+
+.. code:: bash
+
+    fbcap ./messages.htm -f yaml
+
+.. code:: text
+
+    user: First User
+    threads:
+    - participants:
+      - Second User
+      - Third User
+      messages:
+      - date: 2013-10-04T22:05-07:00
+        message: '1'
+        sender: Third User
+      - date: 2013-10-04T22:05-07:00
+        message: '2'
+        sender: Third User
+      - date: 2013-10-04T22:05-07:00
+        message: '3'
+        sender: Third User
+    ...
+
 What if I want to see some statistics?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -204,10 +232,13 @@ Take a look at the help options to find out more!
       path [text]  Path of the messages.htm file to parse
 
     Options:
-      -h, --help           Show this help message and exit
-      -f, --format [str]   Format to convert to (json, csv, text, stats) (default: text)
-      -t, --thread [text]  Only include threads involving exactly the following comma-separated participants in output (-t 'Billy,Steve Jensson')
-      -n, --nocolor        Do not colorize output
+      -h, --help              Show this help message and exit
+      -f, --format [str]      Format to convert to (json, csv, text, yaml, stats) (default: text)
+      -t, --thread [text]     Only include threads involving exactly the following comma-separated participants in output (-t 'Billy,Steve Jensson')
+      -z, --timezones [text]  Timezone disambiguators (TZ=OFFSET,[TZ=OFFSET[...]])
+      -u, --utc               Use UTC timestamps in the output
+      -n, --nocolor           Do not colorize output
+      -p, --noprogress        Do not show progress output
 
 .. |Build Status| image:: https://travis-ci.org/ownaginatious/fbchat-archive-parser.svg?branch=master
    :target: https://travis-ci.org/ownaginatious/fbchat-archive-parser

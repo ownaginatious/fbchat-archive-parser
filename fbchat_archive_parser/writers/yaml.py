@@ -1,10 +1,10 @@
 from __future__ import unicode_literals, absolute_import
 from .dict import DictWriter
 
-import json
+import yaml
 
 
-class JsonWriter(DictWriter):
+class YamlWriter(DictWriter):
 
     def serialize_content(self, data):
-        return json.dumps(data)
+        return yaml.safe_dump(data, default_flow_style=False)

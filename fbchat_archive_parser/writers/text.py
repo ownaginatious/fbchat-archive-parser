@@ -44,7 +44,7 @@ class TextWriter(Writer):
         lines = message.content.split('\n') if message.content else [""]
 
         stream.write((red("[%s] ") + cyan("%s: ")) % (
-                     message.timestamp.strftime(self.DATE_DOC_FORMAT),
+                     self.timestamp_to_string(message.timestamp),
                      message.sender))
 
         if len(lines) == 1:

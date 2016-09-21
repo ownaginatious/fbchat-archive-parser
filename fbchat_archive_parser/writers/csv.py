@@ -45,7 +45,7 @@ class CsvWriter(Writer):
             writer = self.get_writer(stream, True)
         row = {
             SENDER_KEY: message.sender,
-            DATE_KEY: message.timestamp.strftime(self.DATE_DOC_FORMAT),
+            DATE_KEY: self.timestamp_to_string(message.timestamp),
             MESSAGE_KEY: message.content
         }
         if parent:

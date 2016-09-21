@@ -2,9 +2,17 @@ import sys
 from colorama import Fore, Style, init
 
 
-def set_color(nocolor):
-    init(strip=nocolor or not sys.stdout.isatty())
+def set_color(stream, disabled):
 
+    original_stderr = sys.stderr
+    original_stdout = sys.stdout
+
+    init(strip=disabled)
+
+    if stream != original_stdout:
+        sys.stdout = original_stdout
+    if stream != original_stderr:
+        sys.stderr = original_stderr
 
 def error(text):
     sys.stderr.write(text)
