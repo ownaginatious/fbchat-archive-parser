@@ -28,7 +28,7 @@ for tz_name in all_timezones:
         TIMEZONE_MAP[tz.strftime("%Z")][offset].add(tz_name)
 
 
-class UnexpectedTimeZoneError(Exception):
+class UnexpectedTimeFormatError(Exception):
     pass
 
 
@@ -98,7 +98,8 @@ class FacebookChatHistory:
     the history and their contacts.
 
     """
-    _DATE_FORMAT = "%A, %B %d, %Y at %I:%M%p"
+    _DATE_FORMATS = ["%A, %B %d, %Y at %I:%M%p",
+                     "%A, %d %B %Y at %H:%M"]
 
     def __init__(self, stream, timezone_hints=None, progress_output=False,
                  filter=None, bs4=False):
@@ -215,7 +216,7 @@ class FacebookChatHistory:
         time_element -- The time element to parse and convert to UTC.
         """
         raw_timestamp = time_element.text
-        timestamp, offset = raw_timestamp.rsplit(" ", 1)
+        timestamp_string, offset = raw_timestamp.rsplit(" ", 1)
         if "UTC+" in offset or "UTC-" in offset:
             if offset[3] == '-':
                 offset = [-1 * int(x) for x in offset[4:].split(':')]
@@ -225,7 +226,7 @@ class FacebookChatHistory:
             offset_hint = self.timezone_hints.get(offset, None)
             if not offset_hint:
                 if offset not in TIMEZONE_MAP:
-                    raise UnexpectedTimeZoneError(raw_timestamp)
+                    raise UnexpectedTimeFormatError(raw_timestamp)
                 elif len(TIMEZONE_MAP[offset]) > 1:
                     raise AmbiguousTimeZoneError(offset, TIMEZONE_MAP[offset])
                 offset = list(TIMEZONE_MAP[offset].keys())[0][:2]
@@ -239,7 +240,17 @@ class FacebookChatHistory:
 
         delta = timedelta(hours=offset[0], minutes=offset[1])
 
-        timestamp = datetime.strptime(timestamp, self._DATE_FORMAT)
+        # Facebook changes the format depending on whether the user is using
+        # 12-hour or 24-hour clock settings.
+        timestamp = None
+        for time_format in self._DATE_FORMATS:
+            try:
+                timestamp = datetime.strptime(timestamp_string, time_format)
+            except ValueError:
+                pass
+        if timestamp is None:
+            raise UnexpectedTimeFormatError(raw_timestamp)
+
         timestamp += delta
         self.current_timestamp = timestamp.replace(tzinfo=pytz.utc)
 

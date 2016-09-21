@@ -9,7 +9,7 @@ import clip
 
 from .writers import BUILTIN_WRITERS, write
 from .parser import FacebookChatHistory, AmbiguousTimeZoneError, \
-                    UnexpectedTimeZoneError
+                    UnexpectedTimeFormatError
 from .utils import set_color, green, bright, cyan, error, \
                    reset_terminal_styling
 
@@ -99,9 +99,14 @@ def parse_data(parser_call):
             regions = ', '.join(list(v)[:3])
             error(" -> [%s] for regions like %s\n" % (k[-1], regions))
         sys.exit(1)
-    except UnexpectedTimeZoneError as uetze:
-        error("\nUnexpected timezone format in \"%s\". Please "
-              "report this bug.\n" % str(uetze))
+    except UnexpectedTimeFormatError as utfe:
+        error("\nUnexpected time format in \"%s\". This program only accepts "
+              "English locale time formatting. If you downloaded your "
+              "Facebook data in a different language, please temporarily "
+              "switch your language settings to English (US), re-download, "
+              "and try again. If that doesn't help, then please report this "
+              "as a bug on the associated GitHub page.\n"
+              % str(utfe))
         sys.exit(1)
 
 
