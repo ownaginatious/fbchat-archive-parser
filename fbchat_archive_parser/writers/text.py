@@ -26,7 +26,7 @@ class TextWriter(Writer):
         stream.write(bright(dash_line))
 
         if len(history.chat_threads) > 0:
-            for k in history.chat_threads.keys():
+            for k in sorted([k for k in history.chat_threads.keys()]):
                 self.write_thread(history.chat_threads[k], stream)
         else:
             stream.write("\n   There's nothing here!\n")

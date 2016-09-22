@@ -92,6 +92,27 @@ class ChatThread(object):
     def __len__(self):
         return len(self.messages)
 
+class SafeXMLFile(object):
+    """
+    Let's implement our own stream filter to remove the inexplicably present
+    control characters for us. We will analyze the incoming byte stream and
+    remove any instances of the offending "DLE" character. This is the only
+    present control character recorded so far. We can add more bad character
+    removals over time.
+    """
+    def __init__(self, stream):
+        self.stream = stream
+
+    def __enter__(self):
+        self.open_file = open(self.stream, 'rb')
+        return self
+
+    def __exit__(self, *args):
+        self.open_file.close()
+
+    def read(self, size=-1):
+        buff = self.open_file.read(size)
+        return buff.replace(b'\x10', b'')
 
 class FacebookChatHistory:
     """
@@ -143,17 +164,19 @@ class FacebookChatHistory:
         BeautifulSoup does.
         """
         if not use_bs4:
-            for pos, element in ET.iterparse(
-                    self.stream, events=("start", "end"),
-                    parser=XMLParser(encoding=str('UTF-8'))):
-                self._process_element(pos, element)
+            parser = XMLParser(encoding='UTF-8')
+            with SafeXMLFile(self.stream) as f:
+                for pos, element in ET.iterparse(f, events=("start", "end"),
+                                                 parser=parser):
+                    self._process_element(pos, element)
         else:
             # Although apparently uncommon, some users have message logs that
             # may not conform to strict XML standards. We will fall back to
             # the BeautifulSoup parser in that case.
             from bs4 import BeautifulSoup
 
-            # Let's force this to be handled as UTF-8
+            # Let's force this to be handled as UTF-8 and hope we don't run out
+            # of memory...
             data = open(self.stream, 'r', encoding='UTF-8').read()
             soup = BeautifulSoup(data, 'html.parser')
             self._process_element('end', soup.find('h1'))
