@@ -3,6 +3,7 @@ import datetime
 _MIN_VALID_TIMEDELTA = datetime.timedelta(hours=-12)
 _MAX_VALID_TIMEDELTA = datetime.timedelta(hours=14)
 
+
 class TzInfoByOffset(datetime.tzinfo):
     """
     Basic timezone implementation (only found in datetime in Python 3+)
@@ -13,7 +14,7 @@ class TzInfoByOffset(datetime.tzinfo):
             raise ValueError("expected datetime.timedelta")
         if time_delta < _MIN_VALID_TIMEDELTA or \
            time_delta > _MAX_VALID_TIMEDELTA:
-           raise ValueError("outside valid timezone range")
+            raise ValueError("outside valid timezone range")
         self.time_delta = time_delta
 
     def utcoffset(self, dt):

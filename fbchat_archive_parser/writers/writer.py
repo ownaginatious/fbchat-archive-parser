@@ -7,6 +7,7 @@ class UnserializableObject(Exception):
 
 DATE_DOC_FORMAT = "%Y-%m-%dT%H:%M"
 
+
 class Writer(object):
 
     def write(self, data):

@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+import re
 
 from collections import namedtuple, defaultdict
 from datetime import datetime, timedelta
@@ -92,6 +93,7 @@ class ChatThread(object):
     def __len__(self):
         return len(self.messages)
 
+
 class SafeXMLFile(object):
     """
     Let's implement our own stream filter to remove the inexplicably present
@@ -100,11 +102,33 @@ class SafeXMLFile(object):
     present control character recorded so far. We can add more bad character
     removals over time.
     """
+
     def __init__(self, stream):
+
+        # Create a regex for matching all illegal characters within the
+        # XML 1.1 spec so that we can filter them out.
+        illegal_unichrs = [(0x00, 0x08), (0x0B, 0x0C), (0x0E, 0x1F),
+                           (0x7F, 0x84), (0x86, 0x9F), (0xFDD0, 0xFDDF),
+                           (0xFFFE, 0xFFFF)]
+        if sys.maxunicode >= 0x10000:  # not narrow build
+            illegal_unichrs.extend([(0x1FFFE, 0x1FFFF), (0x2FFFE, 0x2FFFF),
+                                    (0x3FFFE, 0x3FFFF), (0x4FFFE, 0x4FFFF),
+                                    (0x5FFFE, 0x5FFFF), (0x6FFFE, 0x6FFFF),
+                                    (0x7FFFE, 0x7FFFF), (0x8FFFE, 0x8FFFF),
+                                    (0x9FFFE, 0x9FFFF), (0xAFFFE, 0xAFFFF),
+                                    (0xBFFFE, 0xBFFFF), (0xCFFFE, 0xCFFFF),
+                                    (0xDFFFE, 0xDFFFF), (0xEFFFE, 0xEFFFF),
+                                    (0xFFFFE, 0xFFFFF), (0x10FFFE, 0x10FFFF)])
+        uni = chr if sys.version_info >= (3, 0) else unichr
+        illegal_ranges = ["%s-%s" % (uni(low), uni(high))
+                          for (low, high) in illegal_unichrs]
+        self.scrubber = re.compile(u'[%s]' % u''.join(illegal_ranges))
         self.stream = stream
 
     def __enter__(self):
-        self.open_file = open(self.stream, 'rb')
+        # Read the stream in at the character boundaries to ensure we are not
+        # accidentally extracting only partial characters in our buffers.
+        self.open_file = open(self.stream, 'rt', encoding='utf-8')
         return self
 
     def __exit__(self, *args):
@@ -112,7 +136,11 @@ class SafeXMLFile(object):
 
     def read(self, size=-1):
         buff = self.open_file.read(size)
-        return buff.replace(b'\x10', b'')
+        # The XML parser is dumb and seems to only utilize UTF-8
+        # encoders/decoders if we hand it a byte stream. Fortunately, it
+        # doesn't seem to care if it got more or less bytes then it asked for.
+        return re.sub(self.scrubber, '', buff).encode('utf-8')
+
 
 class FacebookChatHistory:
     """

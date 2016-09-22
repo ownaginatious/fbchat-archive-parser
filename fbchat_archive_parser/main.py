@@ -16,26 +16,29 @@ from .utils import set_color, green, bright, cyan, error, \
 # encoder, but apparently on Windows that may not be the case.
 if sys.version_info >= (3, 0):
 
-  import io
-  # Change the output streams to binary.
-  sys.stderr = sys.stderr.detach()
-  sys.stdout = sys.stdout.detach()
+    import io
+    # Change the output streams to binary.
+    sys.stderr = sys.stderr.detach()
+    sys.stdout = sys.stdout.detach()
 
-  # Wrap them in a safe UTF-8 encoders. PDB doesn't like it when
-  # the streams are wrapped in StreamWriter.
-  sys.stdout = io.TextIOWrapper(sys.stdout, encoding='UTF-8', errors='replace')
-  sys.stderr = io.TextIOWrapper(sys.stderr, encoding='UTF-8', errors='replace')
+    # Wrap them in a safe UTF-8 encoders. PDB doesn't like it when
+    # the streams are wrapped in StreamWriter.
+    sys.stdout = io.TextIOWrapper(sys.stdout, encoding='UTF-8',
+                                  errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr, encoding='UTF-8',
+                                  errors='replace')
 
 else:
 
-  # Wrap the raw Python 2 output streams in smart UTF-8 encoders.
-  # Python 2 doesn't like it when the raw file handles are wrapped in
-  # TextIOWrapper.
-  from encodings.utf_8 import StreamWriter
-  sys.stderr = StreamWriter(sys.stderr)
-  sys.stdout = StreamWriter(sys.stdout)
+    # Wrap the raw Python 2 output streams in smart UTF-8 encoders.
+    # Python 2 doesn't like it when the raw file handles are wrapped in
+    # TextIOWrapper.
+    from encodings.utf_8 import StreamWriter
+    sys.stderr = StreamWriter(sys.stderr)
+    sys.stdout = StreamWriter(sys.stdout)
 
 app = clip.App()
+
 
 @app.main(description='A program for converting Facebook chat history to a '
                       'number of more usable formats')
