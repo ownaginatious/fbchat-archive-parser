@@ -164,7 +164,9 @@ class FacebookChatHistory:
         BeautifulSoup does.
         """
         if not use_bs4:
-            parser = XMLParser(encoding='UTF-8')
+            # Cast to str to ensure not unicode under Python 2, as the parser
+            # doesn't like that.
+            parser = XMLParser(encoding=str('UTF-8'))
             with SafeXMLFile(self.stream) as f:
                 for pos, element in ET.iterparse(f, events=("start", "end"),
                                                  parser=parser):
