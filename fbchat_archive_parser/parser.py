@@ -122,7 +122,7 @@ class SafeXMLFile(object):
         uni = chr if sys.version_info >= (3, 0) else unichr
         illegal_ranges = ["%s-%s" % (uni(low), uni(high))
                           for (low, high) in illegal_unichrs]
-        self.scrubber = re.compile(u'[%s]' % u''.join(illegal_ranges))
+        self.scrubber = re.compile('[%s]' % ''.join(illegal_ranges))
         self.stream = stream
 
     def __enter__(self):
