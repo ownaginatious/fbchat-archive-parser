@@ -30,8 +30,8 @@ class CsvWriter(Writer):
     def write_history(self, history, stream=sys.stdout, writer=None):
         if not writer:
             writer = self.get_writer(stream, True)
-        for k in history.chat_threads.keys():
-            self.write_thread(history.chat_threads[k], writer=writer)
+        for k in history.threads.keys():
+            self.write_thread(history.threads[k], writer=writer)
 
     def write_thread(self, thread, stream=sys.stdout, writer=None):
         if not writer:

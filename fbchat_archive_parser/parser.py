@@ -1,97 +1,16 @@
 from __future__ import unicode_literals
 import re
 
-from collections import namedtuple, defaultdict
-from datetime import datetime, timedelta
+from collections import defaultdict
 import hashlib
 from io import open
 import sys
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import XMLParser
 
-from sortedcontainers import SortedList
-import pytz
-from pytz import all_timezones, timezone as pytz_timezone
-
+from . import (ChatThread, ChatMessage, FacebookChatHistory)
 from .utils import yellow, magenta
-from .tzinfo import TzInfoByOffset as dt_timezone
-
-
-TIMEZONE_MAP = defaultdict(lambda: defaultdict(set))
-for tz_name in all_timezones:
-    for dst in (True, False):
-        tz = pytz_timezone(tz_name).localize(datetime.now(), is_dst=dst)
-        offset_raw = tz.strftime("%z")
-        if offset_raw[0] == '-':
-            offset = (-1 * int(offset_raw[1:3]), -1 * int(offset_raw[3:5]))
-        else:
-            offset = (int(offset_raw[1:3]), int(offset_raw[3:5]))
-        offset += (offset_raw,)
-        TIMEZONE_MAP[tz.strftime("%Z")][offset].add(tz_name)
-
-
-class UnexpectedTimeFormatError(Exception):
-    pass
-
-
-class AmbiguousTimeZoneError(Exception):
-
-    def __init__(self, tz_name, tz_options):
-        self.tz_name = tz_name
-        self.tz_options = tz_options
-        super(AmbiguousTimeZoneError, self).__init__()
-
-
-# More recent messages have a lower magnitude sequence number.
-_ChatMessageT = namedtuple('_ChatMessageT',
-                           ['timestamp', 'seq_num', 'sender', 'content'])
-
-
-class ChatMessage(_ChatMessageT):
-    """
-    A chat message from some recipient at
-    a timestamp. Messages can also contain a sequence
-    number for ordering messages that occurred the same time.
-
-    """
-
-    def __new__(cls, timestamp, sender, content, seq_num=0):
-        """
-        timestamp -- the time the message was sent (datetime)
-        sender    -- who sent the message (unicode py2/str py3)
-        content   -- content of the message (unicode py2/str py3)
-        seq_num  -- sequence (default 0)
-        """
-        return super(ChatMessage, cls) \
-            .__new__(cls, timestamp, seq_num, sender, content)
-
-
-class ChatThread(object):
-    """
-    Represents a chat thread between the owner of the history
-    and a list of participants. Messages are stored in sorted
-    order.
-
-    """
-
-    def __init__(self, participants):
-        self.participants = list(participants)
-        self.participants.sort()
-        self.messages = SortedList()
-
-    def add_message(self, message):
-        """
-        Adds a message to the chat thread.
-
-        message -- the message to add
-        """
-        self.messages.add(message)
-
-    def __lt__(self, other):
-        return len(self.messages) < len(other.messages)
-
-    def __len__(self):
-        return len(self.messages)
+from .time import parse_timestamp
 
 
 class SafeXMLFile(object):
@@ -142,17 +61,10 @@ class SafeXMLFile(object):
         return re.sub(self.scrubber, '', buff).encode('utf-8')
 
 
-class FacebookChatHistory:
-    """
-    Represents the Facebook chat history between the owner of
-    the history and their contacts.
+class MessageHtmlParser(object):
 
-    """
-    _DATE_FORMATS = ["%A, %B %d, %Y at %I:%M%p",
-                     "%A, %d %B %Y at %H:%M"]
-
-    def __init__(self, stream, timezone_hints=None, use_utc=True,
-                 progress_output=False, filter=None, bs4=False):
+    def __init__(self, path, timezone_hints=None, use_utc=True,
+                 progress_output=False, filter=None):
 
         self.chat_threads = dict()
         self.message_cache = None
@@ -163,7 +75,7 @@ class FacebookChatHistory:
         self.current_timestamp = None
         self.last_line_len = 0
 
-        self.stream = stream
+        self.path = path
         self.progress_output = progress_output
         self.filter = tuple(p.lower() for p in filter) if filter else None
         self.seq_num = 0
@@ -173,7 +85,10 @@ class FacebookChatHistory:
         self.use_utc = use_utc
         if timezone_hints:
             self.timezone_hints = timezone_hints
-        self._parse_content(bs4)
+
+    def parse(self):
+        self._parse_content()
+        return FacebookChatHistory(self.user, self.chat_threads)
 
     def _clear_output(self):
         """
@@ -185,42 +100,20 @@ class FacebookChatHistory:
             sys.stderr.write("\r")
             sys.stderr.flush()
 
-    def _parse_content(self, use_bs4):
+    def _parse_content(self):
         """
         Parses the HTML content as a stream. This is far less memory
         intensive than loading the entire HTML file into memory, like
         BeautifulSoup does.
         """
-        if not use_bs4:
-            # Cast to str to ensure not unicode under Python 2, as the parser
-            # doesn't like that.
-            parser = XMLParser(encoding=str('UTF-8'))
-            with SafeXMLFile(self.stream) as f:
-                for pos, element in ET.iterparse(f, events=("start", "end"),
-                                                 parser=parser):
-                    self._process_element(pos, element)
-        else:
-            # Although apparently uncommon, some users have message logs that
-            # may not conform to strict XML standards. We will fall back to
-            # the BeautifulSoup parser in that case.
-            from bs4 import BeautifulSoup
 
-            # Let's force this to be handled as UTF-8 and hope we don't run out
-            # of memory...
-            data = open(self.stream, 'r', encoding='UTF-8').read()
-            soup = BeautifulSoup(data, 'html.parser')
-            self._process_element('end', soup.find('h1'))
-            for thread_element in soup.find_all('div', class_='thread'):
-                self._process_element('start', thread_element)
-                for e in thread_element:
-                    if e.name == 'div':
-                        user = e.find('span', class_='user')
-                        meta = e.find('span', class_='meta')
-                        self._process_element('end', user)
-                        self._process_element('end', meta)
-                    elif e.name == 'p':
-                        self._process_element('end', e)
-                self._process_element('end', thread_element)
+        # Cast to str to ensure not unicode under Python 2, as the parser
+        # doesn't like that.
+        parser = XMLParser(encoding=str('UTF-8'))
+        with SafeXMLFile(self.path) as f:
+            for pos, element in ET.iterparse(f, events=("start", "end"),
+                                             parser=parser):
+                self._process_element(pos, element)
 
         self._clear_output()
 
@@ -262,58 +155,6 @@ class FacebookChatHistory:
                 return False
             matched |= matches[f]
         return len(matched) == len(participants)
-
-    def _parse_time(self, time_element):
-        """
-        Facebook is highly inconsistent with their timezone formatting.
-        Sometimes it's in UTC+/-HH:MM form, and other times its in the
-        ambiguous PST, PDT. etc format.
-
-        We have to handle the ambiguity by asking for cues from the user.
-
-        time_element -- The time element to parse and convert to UTC.
-        """
-        raw_timestamp = time_element.text
-        timestamp_string, offset = raw_timestamp.rsplit(" ", 1)
-        if "UTC+" in offset or "UTC-" in offset:
-            if offset[3] == '-':
-                offset = [-1 * int(x) for x in offset[4:].split(':')]
-            else:
-                offset = [int(x) for x in offset[4:].split(':')]
-        else:
-            offset_hint = self.timezone_hints.get(offset, None)
-            if not offset_hint:
-                if offset not in TIMEZONE_MAP:
-                    raise UnexpectedTimeFormatError(raw_timestamp)
-                elif len(TIMEZONE_MAP[offset]) > 1:
-                    raise AmbiguousTimeZoneError(offset, TIMEZONE_MAP[offset])
-                offset = list(TIMEZONE_MAP[offset].keys())[0][:2]
-            else:
-                offset = offset_hint
-
-        if len(offset) == 1:
-            # Timezones without minute offset may be formatted
-            # as UTC+X (e.g UTC+8)
-            offset += [0]
-
-        delta = timedelta(hours=offset[0], minutes=offset[1])
-
-        # Facebook changes the format depending on whether the user is using
-        # 12-hour or 24-hour clock settings.
-        timestamp = None
-        for time_format in self._DATE_FORMATS:
-            try:
-                timestamp = datetime.strptime(timestamp_string, time_format)
-            except ValueError:
-                pass
-        if timestamp is None:
-            raise UnexpectedTimeFormatError(raw_timestamp)
-        if self.use_utc:
-            timestamp += delta
-            self.current_timestamp = timestamp.replace(tzinfo=pytz.utc)
-        else:
-            self.current_timestamp = \
-                timestamp.replace(tzinfo=dt_timezone(delta))
 
     def _process_element(self, pos, e):
         """
@@ -394,7 +235,8 @@ class FacebookChatHistory:
             if "user" in class_attr:
                 self.current_sender = e.text
             elif "meta" in class_attr:
-                self._parse_time(e)
+                self.current_timestamp =\
+                    parse_timestamp(e.text, self.use_utc, self.timezone_hints)
         elif tag == "p" and pos == "end":
             if not self.current_sender or not self.current_timestamp:
                 raise Exception("Data missing from message. This is a parsing"

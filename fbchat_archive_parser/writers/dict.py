@@ -26,8 +26,8 @@ class DictWriter(Writer):
 
         threads = []
 
-        for k in history.chat_threads.keys():
-            threads += [self.write_thread(history.chat_threads[k], None)]
+        for k in history.threads.keys():
+            threads += [self.write_thread(history.threads[k], None)]
 
         content = {
             USER_KEY: history.user,

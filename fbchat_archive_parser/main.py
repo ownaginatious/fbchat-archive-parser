@@ -1,14 +1,12 @@
 from collections import Counter
-from functools import partial
 import re
 import sys
-import xml.etree.ElementTree as ET
 
 import clip
 
 from .writers import BUILTIN_WRITERS, write
-from .parser import FacebookChatHistory, AmbiguousTimeZoneError, \
-                    UnexpectedTimeFormatError
+from .parser import MessageHtmlParser
+from .time import AmbiguousTimeZoneError, UnexpectedTimeFormatError
 from .utils import set_color, green, bright, cyan, error, \
                    reset_terminal_styling
 
@@ -30,10 +28,10 @@ if sys.version_info >= (3, 0):
 
 else:
 
+    from encodings.utf_8 import StreamWriter
     # Wrap the raw Python 2 output streams in smart UTF-8 encoders.
     # Python 2 doesn't like it when the raw file handles are wrapped in
     # TextIOWrapper.
-    from encodings.utf_8 import StreamWriter
     sys.stderr = StreamWriter(sys.stderr)
     sys.stdout = StreamWriter(sys.stdout)
 
@@ -84,34 +82,19 @@ def fbcap(path, thread, format, nocolor, timezones, utc, noprogress):
         thread = re.sub("\s+", " ", thread)
         thread = tuple(friend.strip() for friend in thread.split(","))
 
-    parser_call = partial(FacebookChatHistory, stream=path,
-                          filter=thread, timezone_hints=timezone_hints,
-                          progress_output=not noprogress, use_utc=utc)
+    exit_code = 0
     try:
-        try:
-            fbch = parse_data(parser_call)
-        except ET.ParseError:
-            error('\nThe streaming parser crashed due to malformed XML. '
-                  'Falling back to the less strict/efficient python '
-                  'html.parser. It may take a while before you see '
-                  'output... \n')
-            fbch = parse_data(partial(parser_call, bs4=True))
+
+        parser = MessageHtmlParser(path=path, filter=thread,
+                                   timezone_hints=timezone_hints,
+                                   progress_output=not noprogress,
+                                   use_utc=utc)
+        fbch = parser.parse()
         if format == 'stats':
             generate_stats(fbch, sys.stdout)
         else:
             write(format, fbch)
-    except KeyboardInterrupt:
-        error("\nInterupted prematurely by keyboard\n")
-        reset_terminal_styling()
-        sys.exit(1)
-    except Exception as e:
-        reset_terminal_styling()
-        raise e
 
-
-def parse_data(parser_call):
-    try:
-        return parser_call()
     except AmbiguousTimeZoneError as atze:
         error("\nAmbiguous timezone offset found [%s]. Please re-run the "
               "parser with the -z TZ=OFFSET[,TZ=OFFSET2[,...]] flag."
@@ -120,16 +103,21 @@ def parse_data(parser_call):
         for k, v in atze.tz_options.items():
             regions = ', '.join(list(v)[:3])
             error(" -> [%s] for regions like %s\n" % (k[-1], regions))
-        sys.exit(1)
+        exit_code = 1
     except UnexpectedTimeFormatError as utfe:
         error("\nUnexpected time format in \"%s\". This program only accepts "
               "English locale time formatting. If you downloaded your "
               "Facebook data in a different language, please temporarily "
               "switch your language settings to English (US), re-download, "
               "and try again. If that doesn't help, then please report this "
-              "as a bug on the associated GitHub page.\n"
-              % str(utfe))
-        sys.exit(1)
+              "as a bug on the associated GitHub page.\n" % str(utfe))
+        exit_code = 1
+    except KeyboardInterrupt:
+        error("\nInterupted prematurely by keyboard\n")
+        exit_code = 1
+    finally:
+        reset_terminal_styling()
+    sys.exit(exit_code)
 
 
 def generate_stats(fbch, stream):
