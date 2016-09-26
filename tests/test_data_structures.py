@@ -1,8 +1,8 @@
 import unittest
 from datetime import datetime
 from itertools import permutations
-from fbchat_archive_parser.parser \
-    import FacebookChatHistory, ChatThread, ChatMessage
+from fbchat_archive_parser import \
+    FacebookChatHistory, ChatThread, ChatMessage
 
 
 class TestDataStructures(unittest.TestCase):
