@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from collections import Counter
 import re
 import sys
@@ -110,7 +112,7 @@ def fbcap(path, thread, format, nocolor, timezones, utc, noprogress):
               "Facebook data in a different language, please temporarily "
               "switch your language settings to English (US), re-download, "
               "and try again. If that doesn't help, then please report this "
-              "as a bug on the associated GitHub page.\n" % str(utfe))
+              "as a bug on the associated GitHub page.\n" % utfe.time_string)
         exit_code = 1
     except KeyboardInterrupt:
         error("\nInterupted prematurely by keyboard\n")

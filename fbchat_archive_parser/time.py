@@ -32,7 +32,9 @@ for tz_name in pytz.all_timezones:
 
 
 class UnexpectedTimeFormatError(Exception):
-    pass
+    def __init__(self, time_string):
+        self.time_string = time_string
+        super(UnexpectedTimeFormatError, self).__init__()
 
 
 class AmbiguousTimeZoneError(Exception):
