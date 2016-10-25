@@ -131,7 +131,7 @@ def generate_stats(fbch, stream):
     stream.write(bright(text_string))
     stream.write('\n')
 
-    threads = tuple(fbch.chat_threads[k] for k in fbch.chat_threads.keys())
+    threads = tuple(fbch.threads[k] for k in fbch.threads.keys())
     stream.write('Top 10 longest threads:\n\n')
     ordered_threads = sorted(threads, key=lambda t: len(t))
     ordered_threads.reverse()
