@@ -221,7 +221,8 @@ What else can I do?
 
 Take a look at the help options to find out more!
 
-::
+.. code:: text
+
     $ fbcap --help
     fbcap: A program for converting Facebook chat history to a number of more usable formats
 
