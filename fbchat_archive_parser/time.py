@@ -1,4 +1,5 @@
 from collections import defaultdict
+from dateparser.date import DateDataParser
 from datetime import datetime, tzinfo, timedelta as dt_timedelta
 import pytz
 from pytz import timezone as pytz_timezone
@@ -6,7 +7,7 @@ from pytz import timezone as pytz_timezone
 _MIN_VALID_TIMEZONE_OFFSET = dt_timedelta(hours=-12)
 _MAX_VALID_TIMEZONE_OFFSET = dt_timedelta(hours=14)
 
-TIMESTAMP_FORMATS = (
+FACEBOOK_TIMESTAMP_FORMATS = (
     "%A, %B %d, %Y at %I:%M%p",  # English US (12-hour)
     "%A, %d %B %Y at %H:%M",     # English US (24-hour)
 )
@@ -20,15 +21,22 @@ TIMESTAMP_FORMATS = (
 #       }
 TIMEZONE_MAP = defaultdict(lambda: defaultdict(set))
 for tz_name in pytz.all_timezones:
-    for dst in (True, False):
-        tz = pytz_timezone(tz_name).localize(datetime.now(), is_dst=dst)
+    recorded_codes = set()
+    now = datetime.now()
+    # This is a stupid way of detecting the codes for daylight savings time, but timezones in
+    # general are stupid and this is the easy only way.
+    for d in range(0, 365, 30):
+        tz = pytz_timezone(tz_name).localize(datetime.now() + dt_timedelta(days=d), is_dst=None)
+        timezone_code = tz.strftime("%Z")
+        if tz_name in recorded_codes:
+            continue
         offset_raw = tz.strftime("%z")
         if offset_raw[0] == '-':
             offset = (-1 * int(offset_raw[1:3]), -1 * int(offset_raw[3:5]))
         else:
             offset = (int(offset_raw[1:3]), int(offset_raw[3:5]))
         offset += (offset_raw,)
-        TIMEZONE_MAP[tz.strftime("%Z")][offset].add(tz_name)
+        TIMEZONE_MAP[timezone_code][offset].add(tz_name)
 
 
 class UnexpectedTimeFormatError(Exception):
@@ -77,6 +85,20 @@ class TzInfoByOffset(tzinfo):
     def __unicode__(self):
         return unicode(str(self))
 
+_UNIVERSAL_PARSER = DateDataParser()
+
+
+def _universal_parse(raw_timestamp):
+    """
+    A last-ditch effort parser to parse the date if all else fails. This is
+    super slow, but it works for pretty much any possible time string that
+    you throw at it.
+
+    :param raw_timestamp: The raw timestamp in any format.
+    :return: The parsed datetime
+    """
+    return _UNIVERSAL_PARSER.get_date_data(raw_timestamp)['date_obj']
+
 
 def parse_timestamp(raw_timestamp, use_utc, hints):
     """
@@ -115,11 +137,15 @@ def parse_timestamp(raw_timestamp, use_utc, hints):
     # Facebook changes the format depending on whether the user is using
     # 12-hour or 24-hour clock settings.
     timestamp = None
-    for time_format in TIMESTAMP_FORMATS:
+    for time_format in FACEBOOK_TIMESTAMP_FORMATS:
         try:
             timestamp = datetime.strptime(timestamp_string, time_format)
         except ValueError:
             pass
+
+    if not timestamp:
+        # Let's hope we don't end up here...
+        timestamp = _universal_parse(raw_timestamp)
     if timestamp is None:
         raise UnexpectedTimeFormatError(raw_timestamp)
     if use_utc:

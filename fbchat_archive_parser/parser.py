@@ -17,9 +17,7 @@ class SafeXMLFile(object):
     """
     Let's implement our own stream filter to remove the inexplicably present
     control characters for us. We will analyze the incoming byte stream and
-    remove any instances of the offending "DLE" character. This is the only
-    present control character recorded so far. We can add more bad character
-    removals over time.
+    remove any instances of the offending characters.
     """
 
     def __init__(self, stream):

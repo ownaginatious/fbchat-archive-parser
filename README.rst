@@ -222,7 +222,6 @@ What else can I do?
 Take a look at the help options to find out more!
 
 ::
-
     $ fbcap --help
     fbcap: A program for converting Facebook chat history to a number of more usable formats
 
@@ -239,6 +238,21 @@ Take a look at the help options to find out more!
       -u, --utc               Use UTC timestamps in the output
       -n, --nocolor           Do not colorize output
       -p, --noprogress        Do not show progress output
+
+Why is this so slow?
+====================
+
+If this program runs very slow for you, it's likely that your Facebook settings are **not** set to an English locale.
+Unfortunately, Facebook provides timestamps as human readable locale-centric strings. This program at the moment is only
+optimized to deal with English (US) locale timestamps, where other language timestamps go through a very slow universal
+parser.
+
+If you would like to speed this up, temporarily change your locale to English (US) before downloading your Facebook
+chat archive, and change it back when it's done.
+
+This hasn't been thoroughly tested, so please report an issue if this doesn't improve things.
+
+Hopefully, this will be optimized for all supported Facebook languages in the future.
 
 .. |Build Status| image:: https://travis-ci.org/ownaginatious/fbchat-archive-parser.svg?branch=master
    :target: https://travis-ci.org/ownaginatious/fbchat-archive-parser

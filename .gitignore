@@ -58,3 +58,6 @@ target/
 
 # Facebook archive data
 messages.htm
+
+# PyCharm project files
+.idea/
