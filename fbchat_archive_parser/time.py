@@ -13,11 +13,12 @@ _MIN_VALID_TIMEZONE_OFFSET = dt_timedelta(hours=-12)
 _MAX_VALID_TIMEZONE_OFFSET = dt_timedelta(hours=14)
 
 # Timestamp formats (language_code, format string)
-FACEBOOK_TIMESTAMP_FORMATS = (
+FACEBOOK_TIMESTAMP_FORMATS = [
     ("en_us", "dddd, MMMM D, YYYY [at] h:mmA"),  # English US (12-hour)
     ("en_us", "dddd, MMMM D, YYYY [at] HH:mm"),  # English US (24-hour)
-    ("nb_no", "D. MMMM YYYY kl. HH:mm"),         # Norwegian Bokmål
-)
+    ("nb_no", "D. MMMM YYYY kl. HH:mm"),         # Norwegian (Bokmål)
+    ("de_de", "dddd, D. MMMM YYYY [um] HH:mm"),  # German (Germany)
+]
 
 # Generate a mapping of all timezones to their offsets.
 #
@@ -117,6 +118,7 @@ def parse_timestamp(raw_timestamp, use_utc, hints):
 
     raw_timestamp -- The timestamp string to parse and convert to UTC.
     """
+    global FACEBOOK_TIMESTAMP_FORMATS
     timestamp_string, offset = raw_timestamp.rsplit(" ", 1)
     if "UTC+" in offset or "UTC-" in offset:
         if offset[3] == '-':
@@ -144,11 +146,15 @@ def parse_timestamp(raw_timestamp, use_utc, hints):
     # Facebook changes the format depending on whether the user is using
     # 12-hour or 24-hour clock settings.
     timestamp = None
-    for language_code, time_format in FACEBOOK_TIMESTAMP_FORMATS:
+    for number, (language_code, time_format) in enumerate(FACEBOOK_TIMESTAMP_FORMATS):
         try:
             timestamp = arrow.get(timestamp_string, time_format, locale=language_code)
+            # Re-orient the list to ensure that the one that worked is tried first next time.
+            if number > 0:
+                del FACEBOOK_TIMESTAMP_FORMATS[number]
+                FACEBOOK_TIMESTAMP_FORMATS = [(language_code, time_format)] + FACEBOOK_TIMESTAMP_FORMATS
             break
-        except ValueError:
+        except arrow.parser.ParserError:
             pass
 
     if not timestamp:

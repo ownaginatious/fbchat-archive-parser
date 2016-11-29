@@ -107,14 +107,11 @@ def fbcap(path, thread, format, nocolor, timezones, utc, noprogress):
             error(" -> [%s] for regions like %s\n" % (k[-1], regions))
         exit_code = 1
     except UnexpectedTimeFormatError as utfe:
-        error("\nUnexpected time format in \"%s\". This program is optimized to "
-              "accept English locale time formatting, but will try its best to "
-              "parse other language time formatting at heavy efficiency costs. "
-              "Apparently, the time stamp formatting your archive uses has somehow eluded "
-              "even that.\n\nIf you downloaded your Facebook data in a different language, "
-              "you can try temporarily switching your Facebook language settings to English "
-              "(US), re-download, and try again. If that doesn't help, then please report "
-              "this as a bug on the associated GitHub page.\n" % utfe.time_string)
+        error("\nUnexpected time format in \"%s\". If you downloaded your Facebook data in a "
+              "language other than English, then its possible support may still need to be added to "
+              "this tool.\n\n"
+              "Please report this as a bug on the associated GitHub page and it will be fixed promptly.\n"
+              % utfe.time_string)
         exit_code = 1
     except KeyboardInterrupt:
         error("\nInterrupted prematurely by keyboard\n")
