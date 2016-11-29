@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import unicode_literals
+
+import arrow
 from collections import defaultdict
 from dateparser.date import DateDataParser
 from datetime import datetime, tzinfo, timedelta as dt_timedelta
@@ -7,9 +12,11 @@ from pytz import timezone as pytz_timezone
 _MIN_VALID_TIMEZONE_OFFSET = dt_timedelta(hours=-12)
 _MAX_VALID_TIMEZONE_OFFSET = dt_timedelta(hours=14)
 
+# Timestamp formats (language_code, format string)
 FACEBOOK_TIMESTAMP_FORMATS = (
-    "%A, %B %d, %Y at %I:%M%p",  # English US (12-hour)
-    "%A, %d %B %Y at %H:%M",     # English US (24-hour)
+    ("en_us", "dddd, MMMM D, YYYY [at] h:mmA"),  # English US (12-hour)
+    ("en_us", "dddd, MMMM D, YYYY [at] HH:mm"),  # English US (24-hour)
+    ("nb_no", "D. MMMM YYYY kl. HH:mm"),         # Norwegian Bokmål
 )
 
 # Generate a mapping of all timezones to their offsets.
@@ -137,9 +144,10 @@ def parse_timestamp(raw_timestamp, use_utc, hints):
     # Facebook changes the format depending on whether the user is using
     # 12-hour or 24-hour clock settings.
     timestamp = None
-    for time_format in FACEBOOK_TIMESTAMP_FORMATS:
+    for language_code, time_format in FACEBOOK_TIMESTAMP_FORMATS:
         try:
-            timestamp = datetime.strptime(timestamp_string, time_format)
+            timestamp = arrow.get(timestamp_string, time_format, locale=language_code)
+            break
         except ValueError:
             pass
 
@@ -148,6 +156,7 @@ def parse_timestamp(raw_timestamp, use_utc, hints):
         timestamp = _universal_parse(raw_timestamp)
     if timestamp is None:
         raise UnexpectedTimeFormatError(raw_timestamp)
+    timestamp = timestamp.datetime
     if use_utc:
         timestamp += delta
         return timestamp.replace(tzinfo=pytz.utc)

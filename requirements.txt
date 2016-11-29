@@ -4,11 +4,12 @@
 #
 #    pip-compile --output-file requirements.txt requirements.in
 #
+arrow==0.9.0
 clip.py==0.3.2
 colorama==0.3.7
 dateparser==0.5.0
 jdatetime==1.8.1          # via dateparser
-python-dateutil==2.6.0    # via dateparser
+python-dateutil==2.6.0    # via arrow, dateparser
 pytz==2016.7
 pyyaml==3.12
 regex==2016.10.22         # via dateparser
