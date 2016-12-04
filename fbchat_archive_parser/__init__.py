@@ -35,6 +35,7 @@ class ChatThread(object):
         message -- the message to add
         """
         self.messages.add(message)
+        return self
 
     def __lt__(self, other):
         return len(self.messages) < len(other.messages)

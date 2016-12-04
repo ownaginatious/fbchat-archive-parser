@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from datetime import datetime
 import unittest
 
@@ -7,7 +9,7 @@ from fbchat_archive_parser.time import (parse_timestamp,
                                         AmbiguousTimeZoneError)
 
 
-class TestDataStructures(unittest.TestCase):
+class TestTimestamps(unittest.TestCase):
 
     def setUp(self):
         self.expected_datetime = datetime(2016, 12, 4, 20, 54).replace(tzinfo=pytz.UTC)

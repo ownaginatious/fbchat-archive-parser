@@ -1,8 +1,6 @@
 from __future__ import unicode_literals, absolute_import
 from .writer import Writer
 
-import sys
-
 USER_KEY = "user"
 THREADS_KEY = "threads"
 SENDER_KEY = "sender"
@@ -22,7 +20,7 @@ class DictWriter(Writer):
             stream.write(self.serialize_content(data))
         return data
 
-    def write_history(self, history, stream=sys.stdout):
+    def write_history(self, history, stream):
 
         threads = []
 
@@ -35,7 +33,7 @@ class DictWriter(Writer):
         }
         return self._write(stream, content)
 
-    def write_thread(self, thread, stream=sys.stdout):
+    def write_thread(self, thread, stream):
 
         messages = []
 
@@ -48,8 +46,7 @@ class DictWriter(Writer):
         }
         return self._write(stream, content)
 
-    def write_message(self, message, stream=sys.stdout):
-
+    def write_message(self, message, stream):
         content = {
             SENDER_KEY: message.sender,
             DATE_KEY: self.timestamp_to_string(message.timestamp),

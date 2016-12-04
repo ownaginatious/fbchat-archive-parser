@@ -1,3 +1,5 @@
+import sys
+
 import pytz
 from ..parser import ChatThread, ChatMessage, FacebookChatHistory
 
@@ -10,23 +12,23 @@ DATE_DOC_FORMAT = "%Y-%m-%dT%H:%M"
 
 class Writer(object):
 
-    def write(self, data):
+    def write(self, data, stream=sys.stdout):
         if isinstance(data, FacebookChatHistory):
-            return self.write_history(data)
+            return self.write_history(data, stream)
         elif isinstance(data, ChatThread):
-            return self.write_thread(data)
+            return self.write_thread(data, stream)
         elif isinstance(data, ChatMessage):
-            return self.write_message(data)
+            return self.write_message(data, stream)
         else:
             raise UnserializableObject()
 
-    def write_history(self, data):
+    def write_history(self, data, stream):
         raise NotImplementedError
 
-    def write_thread(self, data):
+    def write_thread(self, data, stream):
         raise NotImplementedError
 
-    def write_message(self, data):
+    def write_message(self, data, stream):
         raise NotImplementedError
 
     def timestamp_to_string(self, timestamp):

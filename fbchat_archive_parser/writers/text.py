@@ -1,7 +1,5 @@
 from __future__ import unicode_literals
 
-import sys
-
 from .writer import Writer
 from ..utils import yellow, red, cyan, bright
 
@@ -15,7 +13,7 @@ class TextWriter(Writer):
 
     DATE_DOC_FORMAT = "%Y-%m-%d %H:%MZ"
 
-    def write_history(self, history, stream=sys.stdout):
+    def write_history(self, history, stream):
 
         dash_line = "-------------------------" + \
                     ('-' * len(history.user)) + "-\n"
@@ -32,14 +30,14 @@ class TextWriter(Writer):
             stream.write("\n   There's nothing here!\n")
         stream.write("\n")
 
-    def write_thread(self, thread, stream=sys.stdout):
+    def write_thread(self, thread, stream):
 
         stream.write("\nConversation with %s:\n\n" %
                      yellow(", ".join(thread.participants)))
         for message in thread.messages:
             self.write_message(message, stream)
 
-    def write_message(self, message, stream=sys.stdout):
+    def write_message(self, message, stream):
 
         lines = message.content.split('\n') if message.content else [""]
 
