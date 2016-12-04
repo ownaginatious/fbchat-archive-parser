@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 import arrow
 from collections import defaultdict
-from dateparser.date import DateDataParser
 from datetime import datetime, tzinfo, timedelta as dt_timedelta
 import pytz
 from pytz import timezone as pytz_timezone
@@ -93,20 +92,6 @@ class TzInfoByOffset(tzinfo):
     def __unicode__(self):
         return unicode(str(self))
 
-_UNIVERSAL_PARSER = DateDataParser()
-
-
-def _universal_parse(raw_timestamp):
-    """
-    A last-ditch effort parser to parse the date if all else fails. This is
-    super slow, but it works for pretty much any possible time string that
-    you throw at it.
-
-    :param raw_timestamp: The raw timestamp in any format.
-    :return: The parsed datetime
-    """
-    return _UNIVERSAL_PARSER.get_date_data(raw_timestamp)['date_obj']
-
 
 def parse_timestamp(raw_timestamp, use_utc, hints):
     """
@@ -157,14 +142,11 @@ def parse_timestamp(raw_timestamp, use_utc, hints):
         except arrow.parser.ParserError:
             pass
 
-    if not timestamp:
-        # Let's hope we don't end up here...
-        timestamp = _universal_parse(raw_timestamp)
     if timestamp is None:
         raise UnexpectedTimeFormatError(raw_timestamp)
     timestamp = timestamp.datetime
     if use_utc:
-        timestamp += delta
+        timestamp -= delta
         return timestamp.replace(tzinfo=pytz.utc)
     else:
         return timestamp.replace(tzinfo=TzInfoByOffset(delta))

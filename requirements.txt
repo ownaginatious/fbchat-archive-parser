@@ -7,14 +7,8 @@
 arrow==0.9.0
 clip.py==0.3.2
 colorama==0.3.7
-dateparser==0.5.0
-jdatetime==1.8.1          # via dateparser
-python-dateutil==2.6.0    # via arrow, dateparser
+python-dateutil==2.6.0    # via arrow
 pytz==2016.7
 pyyaml==3.12
-regex==2016.10.22         # via dateparser
-ruamel.yaml==0.12.16      # via dateparser
 six==1.10.0               # via python-dateutil
 sortedcontainers==1.5.4
-tzlocal==1.3              # via dateparser
-umalqurra==0.2            # via dateparser

@@ -3,11 +3,11 @@ from colorama import Fore, Style, init
 
 
 def set_color(stream, disabled):
-    '''
+    """
     Remember what our original streams were so that we
     can colorize them separately, which colorama doesn't
     seem to natively support.
-    '''
+    """
     original_stderr = sys.stderr
     original_stdout = sys.stdout
 
