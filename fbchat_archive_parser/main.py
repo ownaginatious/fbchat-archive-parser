@@ -95,7 +95,7 @@ def fbcap(path, thread, format, nocolor, timezones, utc, noprogress):
         if format == 'stats':
             generate_stats(fbch, sys.stdout)
         else:
-            write(format, fbch)
+            write(format, fbch, sys.stdout)
 
     except AmbiguousTimeZoneError as atze:
         error("\nAmbiguous timezone offset found [%s]. Please re-run the "
