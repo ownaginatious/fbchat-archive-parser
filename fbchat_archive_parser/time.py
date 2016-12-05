@@ -15,6 +15,7 @@ _MAX_VALID_TIMEZONE_OFFSET = dt_timedelta(hours=14)
 FACEBOOK_TIMESTAMP_FORMATS = [
     ("en_us", "dddd, MMMM D, YYYY [at] h:mmA"),  # English US (12-hour)
     ("en_us", "dddd, MMMM D, YYYY [at] HH:mm"),  # English US (24-hour)
+    ("en_us", "dddd, D MMMM YYYY [at] HH:mm"),  # English UK (24-hour)
     ("nb_no", "D. MMMM YYYY kl. HH:mm"),         # Norwegian (Bokmål)
     ("de_de", "dddd, D. MMMM YYYY [um] HH:mm"),  # German (Germany)
 ]

@@ -26,6 +26,10 @@ class TestTimestamps(unittest.TestCase):
         timestamp_raw = "Sunday, December 4, 2016 at 13:54 PDT"
         self.run_timestamp_test(timestamp_raw)
 
+    def test_english_uk_24(self):
+        timestamp_raw = "Sunday, 4 December 2016 at 13:54 PDT"
+        self.run_timestamp_test(timestamp_raw)
+
     def test_deutsch(self):
         timestamp_raw = "Sonntag, 4. Dezember 2016 um 13:54 PDT"
         self.run_timestamp_test(timestamp_raw)
