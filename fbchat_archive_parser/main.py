@@ -100,7 +100,7 @@ def fbcap(path, thread, format, nocolor, timezones, utc, noprogress):
     except AmbiguousTimeZoneError as atze:
         error("\nAmbiguous timezone offset found [%s]. Please re-run the "
               "parser with the -z TZ=OFFSET[,TZ=OFFSET2[,...]] flag."
-              "(e.g. -t PST=-0800,PDT=-0700). Your options are as "
+              "(e.g. -z PST=-0800,PDT=-0700). Your options are as "
               "follows:\n" % atze.tz_name)
         for k, v in atze.tz_options.items():
             regions = ', '.join(list(v)[:3])
