@@ -32,9 +32,13 @@ for tz_name in pytz.all_timezones:
     recorded_codes = set()
     now = datetime.now()
     # This is a stupid way of detecting the codes for daylight savings time, but timezones in
-    # general are stupid and this is the easy only way.
+    # general are stupid and this is an easy way.
     for d in range(0, 365, 30):
-        tz = pytz_timezone(tz_name).localize(datetime.now() + dt_timedelta(days=d), is_dst=None)
+        # Sometimes we can come up with invalid days/times. We will try adding a day if that happens.
+        try:
+            tz = pytz_timezone(tz_name).localize(datetime.now() + dt_timedelta(days=d), is_dst=None)
+        except pytz.exceptions.NonExistentTimeError:
+            tz = pytz_timezone(tz_name).localize(datetime.now() + dt_timedelta(days=d + 1), is_dst=None)
         timezone_code = tz.strftime("%Z")
         if tz_name in recorded_codes:
             continue
