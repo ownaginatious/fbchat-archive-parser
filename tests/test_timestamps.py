@@ -30,8 +30,12 @@ class TestTimestamps(unittest.TestCase):
         timestamp_raw = "Sunday, 4 December 2016 at 13:54 PDT"
         self.run_timestamp_test(timestamp_raw)
 
+    def test_francais_france(self):
+        timestamp_raw = "dimanche 4 décembre 2016, 13:54 UTC-07"
+        self.run_timestamp_test(timestamp_raw)
+
     def test_deutsch(self):
-        timestamp_raw = "Sonntag, 4. Dezember 2016 um 13:54 PDT"
+        timestamp_raw = "Sonntag, 4. Dezember 2016 um 13:54 UTC-07"
         self.run_timestamp_test(timestamp_raw)
 
     def test_norsk_bokmal(self):

@@ -23,9 +23,9 @@ class TestWriters(unittest.TestCase):
 
         threads = {
             'test_owner,test_user': ChatThread(participants=['test_owner', 'test_user'])
-                .add_message(ChatMessage(_NOW, 'test_owner', '百人看不懂', 0)),
+                .add_message(ChatMessage(_NOW, 'test_owner', '白人看不懂', 0)),
             'test_user,test_user_1,test_user_2': ChatThread(participants=['test_owner', 'test_user_1', 'test_user_2'])
-                .add_message(ChatMessage(_NOW, 'test_owner', '百人看不懂', 1))
+                .add_message(ChatMessage(_NOW, 'test_owner', '白人看不懂', 1))
                 .add_message(ChatMessage(_NOW, 'test_user_1', 'Что это?', 2))
                 .add_message(ChatMessage(_NOW, 'test_user_2', 'En ymmärrä', 2)),
         }
