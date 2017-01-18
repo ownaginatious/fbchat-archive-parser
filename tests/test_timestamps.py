@@ -44,6 +44,10 @@ class TestTimestamps(unittest.TestCase):
         timestamp_raw = "4. desember 2016 kl. 13:54 UTC-07"
         self.run_timestamp_test(timestamp_raw)
 
+    def test_espanol(self):
+        timestamp_raw = "domingo, 4 de diciembre de 2016 a las 13:54 UTC-07"
+        self.run_timestamp_test(timestamp_raw)
+
     def test_bad_timestamp(self):
         timestamp_raw = "not a real timestamp"
         with self.assertRaises(UnexpectedTimeFormatError):
