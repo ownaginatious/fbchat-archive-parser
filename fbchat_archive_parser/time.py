@@ -20,6 +20,7 @@ FACEBOOK_TIMESTAMP_FORMATS = [
     ("de_de", "dddd, D. MMMM YYYY [um] HH:mm"),                 # German (Germany)
     ("nb_no", "D. MMMM YYYY kl. HH:mm"),                        # Norwegian (Bokmål)
     ("es_es", "dddd, D [de] MMMM [de] YYYY [a las?] H:mm"),     # Spanish (General)
+    ("sl_si", "D. MMMM YYYY [ob] H:mm"),                        # Slovenian
 ]
 
 # Generate a mapping of all timezones to their offsets.
