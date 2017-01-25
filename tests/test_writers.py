@@ -4,10 +4,10 @@ from __future__ import unicode_literals
 
 from datetime import datetime
 from io import BytesIO
-import sys
 import unittest
 
 import pytz
+import six
 
 
 from fbchat_archive_parser import (FacebookChatHistory, ChatThread, ChatMessage)
@@ -33,7 +33,7 @@ class TestWriters(unittest.TestCase):
         self.history = FacebookChatHistory(user="test_owner", threads=threads)
         self.output = BytesIO()
 
-        if sys.version_info >= (3, 0):
+        if six.PY3:
             import io
             self.output_handle = io.TextIOWrapper(self.output, encoding='UTF-8', errors='replace')
         else:

@@ -1,8 +1,10 @@
 from __future__ import unicode_literals, absolute_import
-from .writer import Writer
 
 import csv
-import sys
+
+import six
+
+from .writer import Writer
 
 THREAD_ID_KEY = "thread"
 SENDER_KEY = "sender"
@@ -23,7 +25,7 @@ class CsvWriter(Writer):
         # In that case, let's give it the underlying byte stream and encode
         # keys/values to UTF-8 ourselves so that it won't attempt to encode
         # them.
-        if sys.version_info[0] == 2:
+        if six.PY2:
             from encodings.utf_8 import StreamWriter
             if isinstance(stream, StreamWriter):
                 stream = stream.stream
@@ -49,7 +51,7 @@ class CsvWriter(Writer):
             self.write_message(message, stream, thread, writer=writer)
 
     def encode_row(self, row):
-        if sys.version_info[0] == 2:
+        if six.PY2:
             return {
                 k: v.encode('utf8')
                 for k, v in row.items()

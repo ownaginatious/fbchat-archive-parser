@@ -10,5 +10,5 @@ colorama==0.3.7
 python-dateutil==2.6.0    # via arrow
 pytz==2016.7
 pyyaml==3.12
-six==1.10.0               # via python-dateutil
+six==1.10.0
 sortedcontainers==1.5.4

@@ -5,6 +5,7 @@ import re
 import sys
 
 import clip
+import six
 
 from .writers import BUILTIN_WRITERS, write
 from .parser import MessageHtmlParser
@@ -14,7 +15,7 @@ from .utils import set_color, green, bright, cyan, error, \
 
 # Python 3 is supposed to be smart enough to not ever default to the 'ascii'
 # encoder, but apparently on Windows that may not be the case.
-if sys.version_info >= (3, 0):
+if six.PY3:
 
     import io
     # Change the output streams to binary.
