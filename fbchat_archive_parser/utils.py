@@ -2,21 +2,46 @@ import sys
 from colorama import Fore, Style, init
 
 
+class BinaryStreamWrapper(object):
+    """
+    Some of the writers do not support colorizing and
+    also do not play nicely with the decolorizing wrapper.
+    This provides us a shortcut to the original stream
+    to avoid issues.
+    """
+
+    def __init__(self, binary_stream, new_stream):
+        self.__binary_stream = binary_stream
+        self.__new_stream = new_stream
+
+    @property
+    def binary_stream(self):
+        return self.__binary_stream
+
+    def __getattr__(self, name):
+        return getattr(self.__new_stream, name)
+
+    def fileno(self):
+        raise OSError()
+
+
 def set_color(stream, disabled):
     """
     Remember what our original streams were so that we
     can colorize them separately, which colorama doesn't
     seem to natively support.
     """
-    original_stderr = sys.stderr
     original_stdout = sys.stdout
+    original_stderr = sys.stderr
 
     init(strip=disabled)
 
     if stream != original_stdout:
         sys.stdout = original_stdout
+        sys.stderr = BinaryStreamWrapper(stream, sys.stderr)
     if stream != original_stderr:
         sys.stderr = original_stderr
+        sys.stdout = BinaryStreamWrapper(stream, sys.stdout)
 
 
 def error(text):
