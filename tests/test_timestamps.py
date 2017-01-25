@@ -55,6 +55,10 @@ class TestTimestamps(unittest.TestCase):
     def test_magyar(self):
         timestamp_raw = "2016. december 4., 13:54 UTC-07"
         self.run_timestamp_test(timestamp_raw)
+    
+    def test_swedish(self):
+        timestamp_raw = "den 4 december 2016 kl 13:54 UTC-07"
+        self.run_timestamp_test(timestamp_raw)
 
     def test_bad_timestamp(self):
         timestamp_raw = "not a real timestamp"
