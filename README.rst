@@ -192,7 +192,7 @@ Just use standard file redirects.
 
 .. code:: bash
 
-    fbcap ./messages.html > my_file.txt
+    fbcap ./messages.htm > my_file.txt
 
 What if I only want to parse out a specific conversation?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -204,14 +204,14 @@ remember the last name), the system will try to compensate.
 
 .. code:: bash
 
-    fbcap ./messages.html -t second
+    fbcap ./messages.htm -t second
 
 .. figure:: http://i.imgur.com/3FbWIN7.png
    :alt: filter second
 
 .. code:: bash
 
-    fbcap ./messages.html -t second,third
+    fbcap ./messages.htm -t second,third
 
 .. figure:: http://i.imgur.com/IJzD1LE.png
    :alt: filter second and third
