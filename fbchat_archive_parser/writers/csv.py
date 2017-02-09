@@ -39,7 +39,8 @@ class CsvWriter(Writer):
         w = csv.DictWriter(stream,
                            fieldnames=columns,
                            quoting=csv.QUOTE_MINIMAL,
-                           extrasaction="ignore")
+                           extrasaction="ignore",
+                           lineterminator="\n")
 
         w.writeheader()
         return w
