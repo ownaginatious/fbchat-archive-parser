@@ -26,7 +26,8 @@ class SafeXMLFile(object):
         # XML 1.1 spec so that we can filter them out.
         illegal_unichrs = [(0x00, 0x08), (0x0B, 0x0C), (0x0E, 0x1F),
                            (0x7F, 0x84), (0x86, 0x9F), (0xFDD0, 0xFDDF),
-                           (0xFFFE, 0xFFFF)]
+                           (0xFFFE, 0xFFFF), (0xD800, 0xDFFF),
+                           (0x0B, 0x1F)]
         if sys.maxunicode >= 0x10000:  # not narrow build
             illegal_unichrs.extend([(0x1FFFE, 0x1FFFF), (0x2FFFE, 0x2FFFF),
                                     (0x3FFFE, 0x3FFFF), (0x4FFFE, 0x4FFFF),
