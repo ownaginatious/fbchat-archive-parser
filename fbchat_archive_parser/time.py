@@ -19,12 +19,13 @@ FACEBOOK_TIMESTAMP_FORMATS = [
     ("en_us", "dddd, D MMMM YYYY [at] HH:mm"),                  # English UK (24-hour)
     ("fr_fr", "dddd D MMMM YYYY, HH:mm"),                       # French (France)
     ("de_de", "dddd, D. MMMM YYYY [um] HH:mm"),                 # German (Germany)
-    ("nb_no", "D. MMMM YYYY kl. HH:mm"),                        # Norwegian (Bokmål)
+    ("nb_no", "D. MMMM YYYY [kl.] HH:mm"),                      # Norwegian (Bokmål)
     ("es_es", "dddd, D [de] MMMM [de] YYYY [a las?] H:mm"),     # Spanish (General)
     ("hu_hu", "YYYY. MMMM D., H:mm"),                           # Hungarian
     ("it_it", "dddd D MMMM YYYY [alle ore] H:mm"),              # Italian (Italy)
-    ("sv_se", "D MMMM YYYY kl HH:mm"),                          # Swedish (Sweden)
-    ("nl_nl", "dddd D MMMM YYYY [om] H:mm"),					# Dutch (Netherlands)
+    ("sv_se", "D MMMM YYYY [kl] HH:mm"),                        # Swedish (Sweden)
+    ("nl_nl", "dddd D MMMM YYYY [om] H:mm"),                    # Dutch (Netherlands)
+    ("da_dk", "D. MMMM YYYY [kl.] HH:mm")                       # Danish (Denmark)
 ]
 
 # Generate a mapping of all timezones to their offsets.
