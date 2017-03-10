@@ -5,3 +5,4 @@ pytz
 sortedcontainers
 pyyaml
 six
+requests

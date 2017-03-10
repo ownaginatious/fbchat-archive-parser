@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 from collections import Counter
+import getpass
 import re
 import sys
 
@@ -12,6 +13,7 @@ from .parser import MessageHtmlParser
 from .time import AmbiguousTimeZoneError, UnexpectedTimeFormatError
 from .utils import set_color, green, bright, cyan, error, \
                    reset_terminal_styling
+from .name_resolver import FacebookNameResolver
 
 # Python 3 is supposed to be smart enough to not ever default to the 'ascii'
 # encoder, but apparently on Windows that may not be the case.
@@ -55,8 +57,11 @@ app = clip.App()
 @clip.flag('-u', '--utc', help='Use UTC timestamps in the output')
 @clip.flag('-n', '--nocolor', help='Do not colorize output')
 @clip.flag('-p', '--noprogress', help='Do not show progress output')
-@clip.arg('path', required=True, help='Path of the messages.htm file to parse')
-def fbcap(path, thread, format, nocolor, timezones, utc, noprogress):
+@clip.flag('-r', '--resolve',
+           help='[BETA] Resolve profile IDs to names by connecting to Facebook')
+@clip.arg('path', required=True,
+          help='Path of the messages.htm file to parse')
+def fbcap(path, thread, format, nocolor, timezones, utc, noprogress, resolve):
 
     # Make stderr colorized unless explicitly disabled.
     set_color(sys.stderr, disabled=nocolor or not sys.stderr.isatty())
@@ -85,13 +90,20 @@ def fbcap(path, thread, format, nocolor, timezones, utc, noprogress):
         thread = re.sub("\s+", " ", thread)
         thread = tuple(friend.strip() for friend in thread.split(","))
 
+    # Collect Facebook credentials if we should resolve profile IDs
+    # via Facebook.
+    name_resolver = None
+    if resolve:
+        email = six.moves.input("Facebook username/email: ")
+        password = getpass.getpass("Facebook password: ")
+        name_resolver = FacebookNameResolver(email, password)
+
     exit_code = 0
     try:
-
         parser = MessageHtmlParser(path=path, filter=thread,
                                    timezone_hints=timezone_hints,
                                    progress_output=not noprogress,
-                                   use_utc=utc)
+                                   use_utc=utc, name_resolver=name_resolver)
         fbch = parser.parse()
         if format == 'stats':
             generate_stats(fbch, sys.stdout)
