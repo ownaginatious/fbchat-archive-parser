@@ -245,7 +245,7 @@ Troubleshooting
 ===============
 
 Why are do some names appear as <some number>@facebook.com?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------------------------------------
 
 For some reason, Facebook seems to randomly swap names for IDs. In recent times, it has gotten worse. You can
 have the parser resolve the names via Facebook itself. With the `--resolve` flag. Keep in mind this is a beta
@@ -262,7 +262,7 @@ any servers and is a direct connection from your computer to Facebook. Please lo
 feeling paranoid or skeptical :)
 
 Why are some of my chat threads missing?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------
 
 This is a mysterious issue on Facebook's end. From anecdotal evidence, it seems that what gets returned in your
 chat archive is generally conversations with people who you have most recently talked to. Fortunately, it always
