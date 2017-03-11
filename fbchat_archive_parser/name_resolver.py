@@ -59,6 +59,10 @@ class FacebookNameResolver(object):
         except RequestException as req_error:
             raise FacebookRequestError(str(req_error))
 
+        # If the login button ID is still around, we probably failed to log in.
+        if 'id="loginbutton"' in page.text:
+            raise FacebookRequestError("Bad Facebook credentials")
+
         # Extract the profile ID. Unfortunately, there aren't many reliable
         # ways for grabbing this data, as a lot of the nicely structured
         # sources are generated in JavaScript.
@@ -110,9 +114,9 @@ class FacebookNameResolver(object):
                 if len(entry['names']) > 1:
                     for name in entry['names'][1:]:
                         self._cached_profiles[name] = entry['names'][0]
-        except:
+        except Exception as e:
             raise FacebookRequestError(
-                'Strangely formed user entry in Facebook response: %s'
+                'Strangely formed user entry in Facebook response: %s' % str(e)
             )
 
         return self._cached_profiles

@@ -94,9 +94,15 @@ def fbcap(path, thread, format, nocolor, timezones, utc, noprogress, resolve):
     # via Facebook.
     name_resolver = None
     if resolve:
-        email = six.moves.input("Facebook username/email: ")
-        password = getpass.getpass("Facebook password: ")
+        sys.stderr.write("Facebook username/email: ")
+        email = six.moves.input()
+        password = getpass.getpass("Facebook password: ", stream=sys.stderr)
         name_resolver = FacebookNameResolver(email, password)
+        sys.stderr.write("\033[1A\r%s" % (" " * len("Facebook password: ")))
+        sys.stderr.write("\033[1A")
+        sys.stderr.write(
+            "%s\r" % (" " * (len("Facebook username/email: ") + len(email)))
+        )
 
     exit_code = 0
     try:
