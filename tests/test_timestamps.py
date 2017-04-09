@@ -51,21 +51,25 @@ class TestTimestamps(unittest.TestCase):
     def test_italian(self):
         timestamp_raw = "Domenica 4 dicembre 2016 alle ore 13:54 UTC-07"
         self.run_timestamp_test(timestamp_raw)
-        
+
     def test_hungarian(self):
         timestamp_raw = "2016. december 4., 13:54 UTC-07"
         self.run_timestamp_test(timestamp_raw)
-    
+
     def test_swedish(self):
         timestamp_raw = "den 4 december 2016 kl 13:54 UTC-07"
         self.run_timestamp_test(timestamp_raw)
-        
+
     def test_dutch(self):
         timestamp_raw = "zondag 4 december 2016 om 13:54 UTC-07"
-        self.run_timestamp_test(timestamp_raw)    
+        self.run_timestamp_test(timestamp_raw)
 
     def test_danish(self):
         timestamp_raw = "4. december 2016 kl. 13:54 UTC-07"
+        self.run_timestamp_test(timestamp_raw)
+
+    def test_romanian(self):
+        timestamp_raw = "4 decembrie 2016 la 13:54 UTC-07"
         self.run_timestamp_test(timestamp_raw)
 
     def test_bad_timestamp(self):
