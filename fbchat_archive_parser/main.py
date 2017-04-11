@@ -95,15 +95,24 @@ def fbcap(path, thread, format, nocolor, timezones, utc, noprogress, resolve):
     name_resolver = None
     if resolve:
         sys.stderr.write("Facebook username/email: ")
+        sys.stderr.flush()
         email = six.moves.input()
-        password = getpass.getpass("Facebook password: ", stream=sys.stderr)
+        # The Windows implementation of getpass.getpass(...) is stupid and
+        # ignores the `stream` argument for unknown reasons. Let's manually
+        # handle the password prompt to stderr in this case, which should
+        # work on all operating systems.
+        sys.stderr.write("Facebook password: ")
+        sys.stderr.flush()
+        password = getpass.getpass("")
         name_resolver = FacebookNameResolver(email, password)
-        sys.stderr.write("\033[1A\r%s" % (" " * len("Facebook password: ")))
-        sys.stderr.write("\033[1A")
+        # Clear the content of the previous line.
+        sys.stderr.write("\033[1A\r%s\r" % (" " * len("Facebook password: ")))
+        # Clear the line before that as well.
+        sys.stderr.write("\r\033[1A")
         sys.stderr.write(
             "%s\r" % (" " * (len("Facebook username/email: ") + len(email)))
         )
-
+        sys.stderr.flush()
     exit_code = 0
     try:
         parser = MessageHtmlParser(path=path, filter=thread,
