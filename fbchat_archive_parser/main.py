@@ -1,20 +1,23 @@
 from __future__ import unicode_literals
 
 from collections import Counter
+import getpass
 import re
 import sys
 
 import clip
+import six
 
 from .writers import BUILTIN_WRITERS, write
 from .parser import MessageHtmlParser
 from .time import AmbiguousTimeZoneError, UnexpectedTimeFormatError
 from .utils import set_color, green, bright, cyan, error, \
                    reset_terminal_styling
+from .name_resolver import FacebookNameResolver
 
 # Python 3 is supposed to be smart enough to not ever default to the 'ascii'
 # encoder, but apparently on Windows that may not be the case.
-if sys.version_info >= (3, 0):
+if six.PY3:
 
     import io
     # Change the output streams to binary.
@@ -54,8 +57,11 @@ app = clip.App()
 @clip.flag('-u', '--utc', help='Use UTC timestamps in the output')
 @clip.flag('-n', '--nocolor', help='Do not colorize output')
 @clip.flag('-p', '--noprogress', help='Do not show progress output')
-@clip.arg('path', required=True, help='Path of the messages.htm file to parse')
-def fbcap(path, thread, format, nocolor, timezones, utc, noprogress):
+@clip.flag('-r', '--resolve',
+           help='[BETA] Resolve profile IDs to names by connecting to Facebook')
+@clip.arg('path', required=True,
+          help='Path of the messages.htm file to parse')
+def fbcap(path, thread, format, nocolor, timezones, utc, noprogress, resolve):
 
     # Make stderr colorized unless explicitly disabled.
     set_color(sys.stderr, disabled=nocolor or not sys.stderr.isatty())
@@ -84,13 +90,35 @@ def fbcap(path, thread, format, nocolor, timezones, utc, noprogress):
         thread = re.sub("\s+", " ", thread)
         thread = tuple(friend.strip() for friend in thread.split(","))
 
+    # Collect Facebook credentials if we should resolve profile IDs
+    # via Facebook.
+    name_resolver = None
+    if resolve:
+        sys.stderr.write("Facebook username/email: ")
+        sys.stderr.flush()
+        email = six.moves.input()
+        # The Windows implementation of getpass.getpass(...) is stupid and
+        # ignores the `stream` argument for unknown reasons. Let's manually
+        # handle the password prompt to stderr in this case, which should
+        # work on all operating systems.
+        sys.stderr.write("Facebook password: ")
+        sys.stderr.flush()
+        password = getpass.getpass("")
+        name_resolver = FacebookNameResolver(email, password)
+        # Clear the content of the previous line.
+        sys.stderr.write("\033[1A\r%s\r" % (" " * len("Facebook password: ")))
+        # Clear the line before that as well.
+        sys.stderr.write("\r\033[1A")
+        sys.stderr.write(
+            "%s\r" % (" " * (len("Facebook username/email: ") + len(email)))
+        )
+        sys.stderr.flush()
     exit_code = 0
     try:
-
         parser = MessageHtmlParser(path=path, filter=thread,
                                    timezone_hints=timezone_hints,
                                    progress_output=not noprogress,
-                                   use_utc=utc)
+                                   use_utc=utc, name_resolver=name_resolver)
         fbch = parser.parse()
         if format == 'stats':
             generate_stats(fbch, sys.stdout)

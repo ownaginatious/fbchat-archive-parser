@@ -32,20 +32,44 @@ class TestTimestamps(unittest.TestCase):
         timestamp_raw = "Sunday, 4 December 2016 at 13:54 PDT"
         self.run_timestamp_test(timestamp_raw)
 
-    def test_francais_france(self):
+    def test_french_france(self):
         timestamp_raw = "dimanche 4 décembre 2016, 13:54 UTC-07"
         self.run_timestamp_test(timestamp_raw)
 
-    def test_deutsch(self):
+    def test_german(self):
         timestamp_raw = "Sonntag, 4. Dezember 2016 um 13:54 UTC-07"
         self.run_timestamp_test(timestamp_raw)
 
-    def test_norsk_bokmal(self):
+    def test_norwegian_bokmal(self):
         timestamp_raw = "4. desember 2016 kl. 13:54 UTC-07"
         self.run_timestamp_test(timestamp_raw)
 
-    def test_espanol(self):
+    def test_spanish_gernal(self):
         timestamp_raw = "domingo, 4 de diciembre de 2016 a las 13:54 UTC-07"
+        self.run_timestamp_test(timestamp_raw)
+
+    def test_italian(self):
+        timestamp_raw = "Domenica 4 dicembre 2016 alle ore 13:54 UTC-07"
+        self.run_timestamp_test(timestamp_raw)
+
+    def test_hungarian(self):
+        timestamp_raw = "2016. december 4., 13:54 UTC-07"
+        self.run_timestamp_test(timestamp_raw)
+
+    def test_swedish(self):
+        timestamp_raw = "den 4 december 2016 kl 13:54 UTC-07"
+        self.run_timestamp_test(timestamp_raw)
+
+    def test_dutch(self):
+        timestamp_raw = "zondag 4 december 2016 om 13:54 UTC-07"
+        self.run_timestamp_test(timestamp_raw)
+
+    def test_danish(self):
+        timestamp_raw = "4. december 2016 kl. 13:54 UTC-07"
+        self.run_timestamp_test(timestamp_raw)
+
+    def test_romanian(self):
+        timestamp_raw = "4 decembrie 2016 la 13:54 UTC-07"
         self.run_timestamp_test(timestamp_raw)
 
     def test_bad_timestamp(self):

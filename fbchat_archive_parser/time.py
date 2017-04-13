@@ -4,8 +4,9 @@ from __future__ import unicode_literals
 
 import arrow
 from collections import defaultdict
-from datetime import datetime, tzinfo, timedelta as dt_timedelta
+from datetime import datetime, tzinfo, time, timedelta as dt_timedelta
 import pytz
+from pytz.exceptions import NonExistentTimeError, AmbiguousTimeError
 from pytz import timezone as pytz_timezone
 
 _MIN_VALID_TIMEZONE_OFFSET = dt_timedelta(hours=-12)
@@ -18,8 +19,14 @@ FACEBOOK_TIMESTAMP_FORMATS = [
     ("en_us", "dddd, D MMMM YYYY [at] HH:mm"),                  # English UK (24-hour)
     ("fr_fr", "dddd D MMMM YYYY, HH:mm"),                       # French (France)
     ("de_de", "dddd, D. MMMM YYYY [um] HH:mm"),                 # German (Germany)
-    ("nb_no", "D. MMMM YYYY kl. HH:mm"),                        # Norwegian (Bokmål)
+    ("nb_no", "D. MMMM YYYY [kl.] HH:mm"),                      # Norwegian (Bokmål)
     ("es_es", "dddd, D [de] MMMM [de] YYYY [a las?] H:mm"),     # Spanish (General)
+    ("hu_hu", "YYYY. MMMM D., H:mm"),                           # Hungarian
+    ("it_it", "dddd D MMMM YYYY [alle ore] H:mm"),              # Italian (Italy)
+    ("sv_se", "D MMMM YYYY [kl] HH:mm"),                        # Swedish (Sweden)
+    ("nl_nl", "dddd D MMMM YYYY [om] H:mm"),                    # Dutch (Netherlands)
+    ("da_dk", "D. MMMM YYYY [kl.] HH:mm"),                      # Danish (Denmark)
+    ("ro_ro", "D MMMM YYYY [la] HH:mm"),                        # Romanian (Romania)
     ("sl_si", "D. MMMM YYYY [ob] H:mm"),                        # Slovenian
 ]
 
@@ -33,15 +40,15 @@ FACEBOOK_TIMESTAMP_FORMATS = [
 TIMEZONE_MAP = defaultdict(lambda: defaultdict(set))
 for tz_name in pytz.all_timezones:
     recorded_codes = set()
-    now = datetime.now()
+    now = datetime.combine(datetime(datetime.now().year, 1, 1).date(), time.min)
     # This is a stupid way of detecting the codes for daylight savings time, but timezones in
     # general are stupid and this is an easy way.
     for d in range(0, 365, 30):
         # Sometimes we can come up with invalid days/times. We will try adding a day if that happens.
         try:
-            tz = pytz_timezone(tz_name).localize(datetime.now() + dt_timedelta(days=d), is_dst=None)
-        except pytz.exceptions.NonExistentTimeError:
-            tz = pytz_timezone(tz_name).localize(datetime.now() + dt_timedelta(days=d + 1), is_dst=None)
+            tz = pytz_timezone(tz_name).localize(now + dt_timedelta(days=d), is_dst=None)
+        except (NonExistentTimeError, AmbiguousTimeError):
+            tz = pytz_timezone(tz_name).localize(now + dt_timedelta(days=d + 1), is_dst=None)
         timezone_code = tz.strftime("%Z")
         if tz_name in recorded_codes:
             continue

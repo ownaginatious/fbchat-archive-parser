@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import XMLParser
 
 from . import (ChatThread, ChatMessage, FacebookChatHistory)
+from .name_resolver import DummyNameResolver
 from .utils import yellow, magenta
 from .time import parse_timestamp
 
@@ -26,7 +27,8 @@ class SafeXMLFile(object):
         # XML 1.1 spec so that we can filter them out.
         illegal_unichrs = [(0x00, 0x08), (0x0B, 0x0C), (0x0E, 0x1F),
                            (0x7F, 0x84), (0x86, 0x9F), (0xFDD0, 0xFDDF),
-                           (0xFFFE, 0xFFFF)]
+                           (0xFFFE, 0xFFFF), (0xD800, 0xDFFF),
+                           (0x0B, 0x1F)]
         if sys.maxunicode >= 0x10000:  # not narrow build
             illegal_unichrs.extend([(0x1FFFE, 0x1FFFF), (0x2FFFE, 0x2FFFF),
                                     (0x3FFFE, 0x3FFFF), (0x4FFFE, 0x4FFFF),
@@ -59,10 +61,21 @@ class SafeXMLFile(object):
         return re.sub(self.scrubber, '', buff).encode('utf-8')
 
 
+def _truncate(string, length=60):
+    if len(string) > 60:
+        return "%s..." % string[:length]
+    return string
+
+
 class MessageHtmlParser(object):
 
     def __init__(self, path, timezone_hints=None, use_utc=True,
-                 progress_output=False, filter=None):
+                 progress_output=False, filter=None, name_resolver=None):
+
+        if not name_resolver:
+            self.name_resolver = DummyNameResolver()
+        else:
+            self.name_resolver = name_resolver
 
         self.chat_threads = dict()
         self.message_cache = None
@@ -81,6 +94,7 @@ class MessageHtmlParser(object):
         self.thread_signatures = set()
         self.timezone_hints = {}
         self.use_utc = use_utc
+
         if timezone_hints:
             self.timezone_hints = timezone_hints
 
@@ -154,6 +168,20 @@ class MessageHtmlParser(object):
             matched |= matches[f]
         return len(matched) == len(participants)
 
+    def _parse_participants(self, participants_element):
+        if not participants_element.text:
+            return ()
+        if participants_element.attrib:
+            participants_text = participants_element.text.strip()
+        else:
+            participants_text = participants_element.contents[0].strip()
+        participants = [self.name_resolver.resolve(p)
+                        for p in participants_text.split(", ")]
+        participants.sort()
+        if self.user in participants:
+            participants.remove(self.user)
+        return tuple(participants)
+
     def _process_element(self, pos, e):
         """
         Parses an incoming HTML element/node for data.
@@ -172,19 +200,11 @@ class MessageHtmlParser(object):
                 # Very rarely threads may lack information on who the
                 # participants are. We will consider those threads corrupted
                 # and skip them.
-                if e.text:
-                    participants_text = e.text.strip()\
-                                        if e.attrib else e.contents[0].strip()
-                    participants = participants_text.split(", ")
-                    participants.sort()
-                    if self.user in participants:
-                        participants.remove(self.user)
-                    participants = tuple(participants)
+                participants = self._parse_participants(e)
+                participants_text = _truncate(', '.join(participants), 60)
+                if participants:
                     self.wait_for_next_thread = \
                         not self._should_record_thread(participants)
-                    if len(participants) > 4:
-                        participants_text = participants_text[0:30] \
-                            + "... <%s>" % str(len(participants))
                     participants_text = yellow("[%s]" % participants_text)
                 else:
                     participants_text = "unknown participants"
@@ -231,7 +251,7 @@ class MessageHtmlParser(object):
             return
         elif tag == "span" and pos == "end":
             if "user" in class_attr:
-                self.current_sender = e.text
+                self.current_sender = self.name_resolver.resolve(e.text)
             elif "meta" in class_attr:
                 self.current_timestamp =\
                     parse_timestamp(e.text, self.use_utc, self.timezone_hints)

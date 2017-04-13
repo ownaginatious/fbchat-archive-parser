@@ -192,7 +192,7 @@ Just use standard file redirects.
 
 .. code:: bash
 
-    fbcap ./messages.html > my_file.txt
+    fbcap ./messages.htm > my_file.txt
 
 What if I only want to parse out a specific conversation?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -204,14 +204,14 @@ remember the last name), the system will try to compensate.
 
 .. code:: bash
 
-    fbcap ./messages.html -t second
+    fbcap ./messages.htm -t second
 
 .. figure:: http://i.imgur.com/3FbWIN7.png
    :alt: filter second
 
 .. code:: bash
 
-    fbcap ./messages.html -t second,third
+    fbcap ./messages.htm -t second,third
 
 .. figure:: http://i.imgur.com/IJzD1LE.png
    :alt: filter second and third
@@ -239,6 +239,36 @@ Take a look at the help options to find out more!
       -u, --utc               Use UTC timestamps in the output
       -n, --nocolor           Do not colorize output
       -p, --noprogress        Do not show progress output
+      -r, --resolve           [BETA] Resolve profile IDs to names by connecting to Facebook
+
+Troubleshooting
+===============
+
+Why are do some names appear as <some number>@facebook.com?
+-----------------------------------------------------------
+
+For some reason, Facebook seems to randomly swap names for IDs. In recent times, it has gotten worse. You can
+have the parser resolve the names via Facebook itself with the ``--resolve`` flag. Keep in mind, this is a beta
+feature and may not work perfectly.
+
+.. code:: text
+
+    $ fbcap ./messages.htm -t second --resolve
+    Facebook username/email: facebook_username
+    Facebook password:
+
+This requires your Facebook credentials to get accurate results. This does not relay your credentials through
+any servers and is a direct connection from your computer to Facebook. Please look at the code if you are
+feeling paranoid or skeptical :)
+
+Why are some of my chat threads missing?
+----------------------------------------
+
+This is a mysterious issue on Facebook's end. From anecdotal evidence, it seems that what gets returned in your
+chat archive is generally conversations with people who you have most recently talked to. Fortunately, it always
+seems to be the complete history for each conversation and nothing gets truncated.
+
+Unfortunately, this cannot be remedied unless Facebook fixes the problem on their end.
 
 .. |Build Status| image:: https://travis-ci.org/ownaginatious/fbchat-archive-parser.svg?branch=master
    :target: https://travis-ci.org/ownaginatious/fbchat-archive-parser

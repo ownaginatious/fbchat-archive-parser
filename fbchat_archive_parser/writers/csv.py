@@ -1,8 +1,11 @@
 from __future__ import unicode_literals, absolute_import
-from .writer import Writer
 
 import csv
-import sys
+
+import six
+
+from ..utils import BinaryStreamWrapper
+from .writer import Writer
 
 THREAD_ID_KEY = "thread"
 SENDER_KEY = "sender"
@@ -19,11 +22,16 @@ class CsvWriter(Writer):
         if include_id:
             columns = [THREAD_ID_KEY] + columns
 
+        # Get the original stream back since CSV can't be in color anyway.
+        if isinstance(stream, BinaryStreamWrapper):
+            stream = stream.binary_stream
+
         # Python 2's CSV writer tries to handle encoding unicode itself.
         # In that case, let's give it the underlying byte stream and encode
         # keys/values to UTF-8 ourselves so that it won't attempt to encode
         # them.
-        if sys.version_info[0] == 2:
+        if six.PY2:
+
             from encodings.utf_8 import StreamWriter
             if isinstance(stream, StreamWriter):
                 stream = stream.stream
@@ -31,7 +39,8 @@ class CsvWriter(Writer):
         w = csv.DictWriter(stream,
                            fieldnames=columns,
                            quoting=csv.QUOTE_MINIMAL,
-                           extrasaction="ignore")
+                           extrasaction="ignore",
+                           lineterminator="\n")
 
         w.writeheader()
         return w
@@ -49,7 +58,7 @@ class CsvWriter(Writer):
             self.write_message(message, stream, thread, writer=writer)
 
     def encode_row(self, row):
-        if sys.version_info[0] == 2:
+        if six.PY2:
             return {
                 k: v.encode('utf8')
                 for k, v in row.items()

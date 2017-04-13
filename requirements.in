@@ -1,6 +1,9 @@
 arrow
+bs4
 clip.py
 colorama
 pytz
 sortedcontainers
 pyyaml
+six
+requests

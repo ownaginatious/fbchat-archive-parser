@@ -7,4 +7,4 @@ import json
 class JsonWriter(DictWriter):
 
     def serialize_content(self, data):
-        return json.dumps(data)
+        return json.dumps(data, ensure_ascii=False)

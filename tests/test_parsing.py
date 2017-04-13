@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import unicode_literals
+
 import unittest
 import os
 from fbchat_archive_parser.parser import MessageHtmlParser
@@ -19,9 +23,9 @@ class TestDataStructures(unittest.TestCase):
     def test_thread_participants(self):
 
         expected = [
-            ["Third User", ],
-            ["Second User", ],
-            ["Third User", "Second User"],
+            ["Third User 三", ],
+            ["Second User 二", ],
+            ["Third User 三", "Second User 二"],
         ]
 
         expected = sorted(sorted(x) for x in expected)
