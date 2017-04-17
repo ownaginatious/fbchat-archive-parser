@@ -1,7 +1,25 @@
-import importlib
+from datetime import datetime
+import io
+import os
+import shutil
 
+import six
 
-BUILTIN_WRITERS = ("json", "csv", "text", "yaml",)
+from .json import JsonWriter
+from .pretty_json import PrettyJsonWriter
+from .csv import CsvWriter
+from .text import TextWriter
+from .yaml import YamlWriter
+
+_BUILTIN_WRITERS = {
+    "json": JsonWriter,
+    "pretty-json": PrettyJsonWriter,
+    "csv": CsvWriter,
+    "text": TextWriter,
+    "yaml": YamlWriter,
+}
+
+BUILTIN_WRITERS = tuple(sorted(list(_BUILTIN_WRITERS.keys())))
 
 
 class SerializerDoesNotExist(KeyError):
@@ -9,10 +27,38 @@ class SerializerDoesNotExist(KeyError):
     pass
 
 
-def write(format, data, stream):
-    if format not in BUILTIN_WRITERS:
-        raise SerializerDoesNotExist("No such serializer '%s'" % format)
-    writer_type = importlib.import_module("fbchat_archive_parser.writers.%s"
-                                          % format)
-    item = getattr(writer_type, "%sWriter" % (format[0].upper() + format[1:]))
-    item().write(data, stream)
+def write(fmt, data, stream_or_dir):
+    if fmt not in _BUILTIN_WRITERS:
+        raise SerializerDoesNotExist("No such serializer '%s'" % fmt)
+    selected_writer = _BUILTIN_WRITERS[fmt]
+    if isinstance(stream_or_dir, six.string_types):
+        write_to_dir(selected_writer(), stream_or_dir, data)
+    else:
+        selected_writer().write(data, stream_or_dir)
+
+
+def write_to_dir(writer, directory, data):
+
+    output_dir = datetime.now().strftime("fbchat_dump_%Y%m%d%H%M")
+    directory = '%s/%s' % (directory, output_dir)
+    try:
+        shutil.rmtree(directory)
+    except FileNotFoundError:
+        pass
+    os.mkdir(directory)
+
+    ordered_threads = [data.threads[k] for k in sorted(list(data.threads.keys()))]
+
+    # Write the manifest
+    with io.open("%s/manifest.txt" % directory, 'w', encoding='utf-8') as manifest:
+        manifest.write("Chat history manifest for: %s\n\n" % data.user)
+        for i, thread in enumerate(ordered_threads, start=1):
+            manifest.write("  %s. %s\n" % (i, ", ".join(thread.participants)))
+
+    # Write each thread.
+    for i, thread in enumerate(ordered_threads, start=1):
+        thread_file_str = "%s/thread_%s.%s" % (directory, i, writer.extension)
+        with io.open(thread_file_str, 'w', encoding='utf-8') as thread_file:
+            writer.write_thread(thread, stream=thread_file)
+
+    print("Thread content written to [%s]" % directory)

@@ -78,3 +78,7 @@ class CsvWriter(Writer):
             row[THREAD_ID_KEY] = "<unknown>" if not parent \
                                  else ", ".join(parent.participants)
         writer.writerow(self.encode_row(row))
+
+    @property
+    def extension(self):
+        return 'csv'

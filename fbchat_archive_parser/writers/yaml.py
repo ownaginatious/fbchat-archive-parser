@@ -14,3 +14,7 @@ class YamlWriter(DictWriter):
         if six.PY2:
             return data.decode('utf8')
         return data
+
+    @property
+    def extension(self):
+        return 'yaml'

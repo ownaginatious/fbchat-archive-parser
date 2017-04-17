@@ -25,7 +25,10 @@ class BinaryStreamWrapper(object):
         raise OSError()
 
 
-def set_color(stream, disabled):
+_COLOR_ENABLED = True
+
+
+def set_stream_color(stream, disabled):
     """
     Remember what our original streams were so that we
     can colorize them separately, which colorama doesn't
@@ -44,12 +47,19 @@ def set_color(stream, disabled):
         sys.stdout = BinaryStreamWrapper(stream, sys.stdout)
 
 
+def set_all_color(enabled):
+    global _COLOR_ENABLED
+    _COLOR_ENABLED = enabled
+
+
 def error(text):
     sys.stderr.write(text)
     sys.stderr.flush()
 
 
 def colorize(color, text):
+    if not _COLOR_ENABLED:
+        return text
     return "%s%s%s" % (color, text, Fore.RESET)
 
 

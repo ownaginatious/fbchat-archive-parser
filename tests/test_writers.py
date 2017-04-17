@@ -41,7 +41,7 @@ class TestWriters(unittest.TestCase):
             self.output_handle = StreamWriter(self.output)
 
     def assert_output(self, format, expected=None):
-        write(format, self.history, stream=self.output_handle)
+        write(format, self.history, stream_or_dir=self.output_handle)
         self.output_handle.flush()
         if expected is not None:
             self.assertEqual(expected, self.output.getvalue())

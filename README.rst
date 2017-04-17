@@ -194,6 +194,19 @@ Just use standard file redirects.
 
     fbcap ./messages.htm > my_file.txt
 
+Can I get each conversation into a separate file?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use the ``-d`` directive to send the output to a directory instead.
+
+.. code:: bash
+
+    fbcap ./messages.htm -d some/random/directory
+
+This will create a file per conversation titled ``thread_#.ext`` where # is the conversation number and
+ext is the extension of the format (e.g. ``json``). A ``manifest.txt`` file is also created, which lists
+the participants in each thread number for navigational/search purposes.
+
 What if I only want to parse out a specific conversation?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -233,9 +246,10 @@ Take a look at the help options to find out more!
 
     Options:
       -h, --help              Show this help message and exit
-      -f, --format [str]      Format to convert to (json, csv, text, yaml, stats) (default: text)
+      -f, --format [str]      Format to convert to (csv, json, pretty-json, text, yaml, stats) (default: text)
       -t, --thread [text]     Only include threads involving exactly the following comma-separated participants in output (-t 'Billy,Steve Jensson')
       -z, --timezones [text]  Timezone disambiguators (TZ=OFFSET,[TZ=OFFSET[...]])
+      -d, --directory [text]  Write all output as a file per thread into a directory (subdirectory will be created)
       -u, --utc               Use UTC timestamps in the output
       -n, --nocolor           Do not colorize output
       -p, --noprogress        Do not show progress output

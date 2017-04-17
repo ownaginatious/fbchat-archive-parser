@@ -4,10 +4,10 @@ from .dict import DictWriter
 import json
 
 
-class JsonWriter(DictWriter):
+class PrettyJsonWriter(DictWriter):
 
     def serialize_content(self, data):
-        return json.dumps(data, ensure_ascii=False)
+        return json.dumps(data, sort_keys=True, indent=4, ensure_ascii=False)
 
     @property
     def extension(self):

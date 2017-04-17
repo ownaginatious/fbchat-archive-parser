@@ -52,3 +52,7 @@ class TextWriter(Writer):
             for line in lines:
                 stream.write("    %s\n" % line)
             stream.write('\n')
+
+    @property
+    def extension(self):
+        return 'txt'

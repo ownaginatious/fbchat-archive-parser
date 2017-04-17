@@ -11,8 +11,8 @@ import six
 from .writers import BUILTIN_WRITERS, write
 from .parser import MessageHtmlParser
 from .time import AmbiguousTimeZoneError, UnexpectedTimeFormatError
-from .utils import set_color, green, bright, cyan, error, \
-                   reset_terminal_styling
+from .utils import (set_stream_color, set_all_color, green, bright, cyan, error,
+                    reset_terminal_styling)
 from .name_resolver import FacebookNameResolver
 
 # Python 3 is supposed to be smart enough to not ever default to the 'ascii'
@@ -54,6 +54,9 @@ app = clip.App()
                '(-t \'Billy,Steve Jensson\')')
 @clip.opt('-z', '--timezones',
           help='Timezone disambiguators (TZ=OFFSET,[TZ=OFFSET[...]])')
+@clip.opt('-d', '--directory', default=None,
+          help='Write all output as a file per thread into a directory '
+               '(subdirectory will be created)')
 @clip.flag('-u', '--utc', help='Use UTC timestamps in the output')
 @clip.flag('-n', '--nocolor', help='Do not colorize output')
 @clip.flag('-p', '--noprogress', help='Do not show progress output')
@@ -61,11 +64,11 @@ app = clip.App()
            help='[BETA] Resolve profile IDs to names by connecting to Facebook')
 @clip.arg('path', required=True,
           help='Path of the messages.htm file to parse')
-def fbcap(path, thread, format, nocolor, timezones, utc, noprogress, resolve):
+def fbcap(path, thread, format, nocolor, timezones, utc, noprogress, resolve, directory):
 
     # Make stderr colorized unless explicitly disabled.
-    set_color(sys.stderr, disabled=nocolor or not sys.stderr.isatty())
-    set_color(sys.stdout, disabled=nocolor or not sys.stdout.isatty())
+    set_stream_color(sys.stderr, disabled=nocolor or not sys.stderr.isatty())
+    set_stream_color(sys.stdout, disabled=nocolor or not sys.stdout.isatty())
 
     if format not in BUILTIN_WRITERS + ('stats',):
         error("\"%s\" is not a valid output format.\n" % format)
@@ -123,7 +126,9 @@ def fbcap(path, thread, format, nocolor, timezones, utc, noprogress, resolve):
         if format == 'stats':
             generate_stats(fbch, sys.stdout)
         else:
-            write(format, fbch, sys.stdout)
+            if directory:
+                set_all_color(enabled=False)
+            write(format, fbch, directory or sys.stdout)
 
     except AmbiguousTimeZoneError as atze:
         error("\nAmbiguous timezone offset found [%s]. Please re-run the "
@@ -150,6 +155,7 @@ def fbcap(path, thread, format, nocolor, timezones, utc, noprogress, resolve):
     sys.exit(exit_code)
 
 
+# TODO: Convert this into a writer implementation.
 def generate_stats(fbch, stream):
 
     text_string = '---------------' + \

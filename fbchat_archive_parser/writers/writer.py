@@ -37,3 +37,7 @@ class Writer(object):
         if timestamp.tzinfo == pytz.utc:
             return "%sZ" % timestamp_string
         return "%s%s" % (timestamp_string, tz_string)
+
+    @property
+    def extension(self):
+        raise NotImplementedError
