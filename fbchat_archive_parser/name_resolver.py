@@ -9,6 +9,7 @@ from requests.exceptions import RequestException
 import six
 
 _EMAIL_REMOVER = re.compile(r"@facebook.com$")
+_MANUAL_NAME_MATCHER = re.compile(r"<span id=\"fb-timeline-cover-name\">([^<]+)</span>")
 
 
 class FacebookRequestError(Exception):
@@ -121,11 +122,37 @@ class FacebookNameResolver(object):
 
         return self._cached_profiles
 
+    def _manual_lookup(self, facebook_id, facebook_id_string):
+        """
+        People who we have not communicated with in a long time
+        will not appear in the look-ahead cache that Facebook keeps.
+        We must manually resolve them.
+
+        :param facebook_id: Profile ID of the user to lookup.
+        :return:
+        """
+        resp = self._session.get(
+            'https://www.facebook.com/%s' % facebook_id,
+            allow_redirects=True, timeout=10
+        )
+        # No point in trying to get this using BeautifulSoup. The HTML here
+        # is the very epitome of what it is to be invalid...
+        m = _MANUAL_NAME_MATCHER.search(resp.text)
+        if m:
+            name = m.group(1)
+        else:
+            name = facebook_id_string
+        self._cached_profiles[facebook_id] = name
+        return name
+
     def resolve(self, facebook_id_string):
         facebook_id = self._parse_id(facebook_id_string)
         if not facebook_id:
             return facebook_id_string
-        return self._cache().get(facebook_id, facebook_id_string)
+        resolved = self._cache().get(facebook_id)
+        if resolved:
+            return resolved
+        return self._manual_lookup(facebook_id, facebook_id_string)
 
 
 class DummyNameResolver(FacebookNameResolver):
