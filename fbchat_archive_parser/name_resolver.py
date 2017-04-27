@@ -156,6 +156,10 @@ class FacebookNameResolver(object):
 
 
 class DummyNameResolver(FacebookNameResolver):
+
     def __init__(self):
         super(DummyNameResolver, self).__init__(None, None)
         self._cached_profiles = {}
+
+    def resolve(self, facebook_id_string):
+        return facebook_id_string
