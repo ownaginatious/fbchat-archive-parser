@@ -2,17 +2,34 @@
 
 from __future__ import unicode_literals
 
-import arrow
 from collections import defaultdict
 from datetime import datetime, tzinfo, time, timedelta as dt_timedelta
+import re
+
 import pytz
 from pytz.exceptions import NonExistentTimeError, AmbiguousTimeError
 from pytz import timezone as pytz_timezone
 
+import arrow
+from babel import Locale
+
 _MIN_VALID_TIMEZONE_OFFSET = dt_timedelta(hours=-12)
 _MAX_VALID_TIMEZONE_OFFSET = dt_timedelta(hours=14)
 
-# Timestamp formats (language_code, format string)
+# Timestamp formats (language_code, format string, [hints])
+#
+# "hints" is a dictionary of word -> int translations. Strongly inflected languages,
+# such as the Slavic languages, tend to change the endings of day and month names to
+# reflect grammatical cases.
+#
+# The supporting multi-lingual date libraries tend to screw this up a lot of the time,
+# so you can add support for missing months. Facebook seems to mess it up on less popular
+# languages too...
+#
+# Days of the week are 1 -> 7 (e.g. Monday -> 1) and months are 1 -> 12 (e.g. January -> 1)
+#
+# e.g. {'poniedziałek': 1}
+#
 FACEBOOK_TIMESTAMP_FORMATS = [
     ("en_us", "dddd, MMMM D, YYYY [at] h:mmA"),                 # English US (12-hour)
     ("en_us", "dddd, MMMM D, YYYY [at] HH:mm"),                 # English US (24-hour)
@@ -30,6 +47,56 @@ FACEBOOK_TIMESTAMP_FORMATS = [
     ("sl_si", "D. MMMM YYYY [ob] H:mm"),                        # Slovenian
     ("cs_cz", "D. MMMM YYYY [v] H:mm")                          # Czech
 ]
+
+
+class LocalizedDateParser(object):
+    """
+    Maps the day and month names back to numeric values for a provided locale code and performs
+    parsing.
+    """
+
+    def __init__(self, locale_id, timestamp_format, hints=None):
+
+        self.locale_id = locale_id
+        self.use_fallback = False
+        self.original_timestamp_format = timestamp_format
+        self.timestamp_format = timestamp_format.replace('dddd', 'd').replace('MMMM', 'M')
+
+        locale = Locale(locale_id.split('_')[0])
+        self.translation_map = {k: str(v) for k, v in hints.items()} if hints else {}
+        # Add in the month and day name data.
+        for attr, start, end, offset in (('months', 1, 12, 0), ('days', 0, 6, 1)):
+            for i in range(start, end + 1):
+                attr_name = getattr(locale, attr)['format']['wide'][i]
+                self.translation_map[attr_name.title()] = str(i + offset)
+                self.translation_map[attr_name.lower()] = str(i + offset)
+        self.matcher = re.compile('|'.join(self.translation_map.keys()))
+
+    def _translate(self, timestamp):
+        return self.matcher.sub(lambda match: self.translation_map[match.group(0)], timestamp)
+
+    def _parse_fallback(self, timestamp):
+        try:
+            return arrow.get(timestamp,
+                             self.original_timestamp_format,
+                             locale=self.locale_id).datetime
+        except arrow.parser.ParserError:
+            return None
+
+    def parse(self, timestamp):
+        if self.use_fallback:
+            return self._parse_fallback(timestamp)
+        else:
+            try:
+                translated_timestamp = self._translate(timestamp)
+                return arrow.get(translated_timestamp, self.timestamp_format).datetime
+            except arrow.parser.ParserError:
+                self.use_fallback = True
+                return self._parse_fallback(timestamp)
+
+_LOCALIZED_DATE_PARSERS = [
+    LocalizedDateParser(x[0], x[1], x[2] if len(x) > 2 else {})
+    for x in FACEBOOK_TIMESTAMP_FORMATS]
 
 # Generate a mapping of all timezones to their offsets.
 #
@@ -146,21 +213,17 @@ def parse_timestamp(raw_timestamp, use_utc, hints):
 
     # Facebook changes the format depending on whether the user is using
     # 12-hour or 24-hour clock settings.
-    timestamp = None
-    for number, (language_code, time_format) in enumerate(FACEBOOK_TIMESTAMP_FORMATS):
-        try:
-            timestamp = arrow.get(timestamp_string, time_format, locale=language_code)
-            # Re-orient the list to ensure that the one that worked is tried first next time.
-            if number > 0:
-                del FACEBOOK_TIMESTAMP_FORMATS[number]
-                FACEBOOK_TIMESTAMP_FORMATS = [(language_code, time_format)] + FACEBOOK_TIMESTAMP_FORMATS
-            break
-        except arrow.parser.ParserError:
-            pass
-
-    if timestamp is None:
+    for number, date_parser in enumerate(_LOCALIZED_DATE_PARSERS):
+        timestamp = date_parser.parse(timestamp_string)
+        if timestamp is None:
+            continue
+        # Re-orient the list to ensure that the one that worked is tried first next time.
+        if number > 0:
+            del FACEBOOK_TIMESTAMP_FORMATS[number]
+            FACEBOOK_TIMESTAMP_FORMATS = [date_parser] + FACEBOOK_TIMESTAMP_FORMATS
+        break
+    else:
         raise UnexpectedTimeFormatError(raw_timestamp)
-    timestamp = timestamp.datetime
     if use_utc:
         timestamp -= delta
         return timestamp.replace(tzinfo=pytz.utc)
