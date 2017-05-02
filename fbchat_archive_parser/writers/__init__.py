@@ -41,9 +41,15 @@ def write_to_dir(writer, directory, data):
 
     output_dir = datetime.now().strftime("fbchat_dump_%Y%m%d%H%M")
     directory = '%s/%s' % (directory, output_dir)
+
+    if six.PY3:
+        not_found_exception = FileNotFoundError
+    else:
+        not_found_exception = IOError
+
     try:
         shutil.rmtree(directory)
-    except FileNotFoundError:
+    except not_found_exception:
         pass
     os.mkdir(directory)
 
