@@ -5,6 +5,9 @@ import shutil
 
 import six
 
+if six.PY2:
+    FileNotFoundError = OSError
+
 from .json import JsonWriter
 from .pretty_json import PrettyJsonWriter
 from .csv import CsvWriter
@@ -42,16 +45,11 @@ def write_to_dir(writer, directory, data):
     output_dir = datetime.now().strftime("fbchat_dump_%Y%m%d%H%M")
     directory = '%s/%s' % (directory, output_dir)
 
-    if six.PY3:
-        not_found_exception = FileNotFoundError
-    else:
-        not_found_exception = IOError
-
     try:
         shutil.rmtree(directory)
-    except not_found_exception:
+    except FileNotFoundError:
         pass
-    os.mkdir(directory)
+    os.makedirs(directory)
 
     ordered_threads = [data.threads[k] for k in sorted(list(data.threads.keys()))]
 
