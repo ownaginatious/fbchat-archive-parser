@@ -2,6 +2,7 @@ from __future__ import unicode_literals, absolute_import
 
 import csv
 
+from io import TextIOWrapper
 import six
 
 from ..utils import BinaryStreamWrapper
@@ -26,15 +27,16 @@ class CsvWriter(Writer):
         if isinstance(stream, BinaryStreamWrapper):
             stream = stream.binary_stream
 
-        # Python 2's CSV writer tries to handle encoding unicode itself.
-        # In that case, let's give it the underlying byte stream and encode
-        # keys/values to UTF-8 ourselves so that it won't attempt to encode
-        # them.
+        # Python 2's CSV writer only works with bytes. In that case, let's
+        # give it the underlying byte stream and encode keys/values to
+        # UTF-8 ourselves so that it won't attempt to encode them using the
+        # `ascii` encoder.
         if six.PY2:
-
             from encodings.utf_8 import StreamWriter
-            if isinstance(stream, StreamWriter):
+            if isinstance(stream, StreamWriter):  # TTY/piped writing
                 stream = stream.stream
+            elif isinstance(stream, TextIOWrapper):  # Direct file writing.
+                stream = stream.buffer
 
         w = csv.DictWriter(stream,
                            fieldnames=columns,
