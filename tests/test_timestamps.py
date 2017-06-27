@@ -83,6 +83,10 @@ class TestTimestamps(unittest.TestCase):
     def test_portuguese_brazil(self):
         timestamp_raw = "4 de dezembro de 2016 às 13:54 UTC-07"
         self.run_timestamp_test(timestamp_raw)
+		
+    def test_portuguese_portugal(self):
+        timestamp_raw = "Domingo, 4 de Dezembro de 2016 às 13:54 UTC-07"
+        self.run_timestamp_test(timestamp_raw)
 
     def test_polish(self):
         timestamp_raw = "4 grudzień 2016 o 13:54 UTC-07"
