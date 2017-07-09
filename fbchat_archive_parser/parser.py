@@ -14,6 +14,10 @@ from .utils import yellow, magenta
 from .time import parse_timestamp
 
 
+class FacebookDataError(Exception):
+    pass
+
+
 class SafeXMLFile(object):
     """
     Let's implement our own stream filter to remove the inexplicably present
@@ -94,6 +98,7 @@ class MessageHtmlParser(object):
         self.thread_signatures = set()
         self.timezone_hints = {}
         self.use_utc = use_utc
+        self.no_sender_warning = False
 
         if timezone_hints:
             self.timezone_hints = timezone_hints
@@ -256,10 +261,19 @@ class MessageHtmlParser(object):
                 self.current_timestamp =\
                     parse_timestamp(e.text, self.use_utc, self.timezone_hints)
         elif tag == "p" and pos == "end":
-            if not self.current_sender or not self.current_timestamp:
-                raise Exception("Data missing from message. This is a parsing"
-                                "error: %s, %s" % (self.current_timestamp,
-                                                   self.current_sender))
+            if not self.current_timestamp:
+                raise FacebookDataError(
+                    "An unrecoverable parsing error has occurred (missing timestamp data)")
+            if not self.current_sender:
+                if not self.no_sender_warning:
+                    sys.stderr.write(
+                        "\rWARNING: The sender was missing in one or more parsed messages. "
+                        "This is an error on Facebook's end that unfortunately cannot be "
+                        "recovered from. Some or all messages in the output may show the "
+                        "sender as 'Unknown' within each thread.\n")
+                    self.no_sender_warning = True
+                self.current_sender = "Unknown"
+
             cm = ChatMessage(timestamp=self.current_timestamp,
                              sender=self.current_sender,
                              content=e.text.strip() if e.text else "",
