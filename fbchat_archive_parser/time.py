@@ -49,6 +49,8 @@ FACEBOOK_TIMESTAMP_FORMATS = [
     ("pt_br", "D [de] MMMM [de] YYYY [às] HH:mm"),              # Portuguese (Brazil)
     ("pt_pt", "dddd, D [de] MMMM [de] YYYY [às] HH:mm"),        # Portuguese (Portugal)
     ("pl_pl", "D MMMM YYYY [o] HH:mm"),                         # Polish
+    ("hr_hr", "D. MMMM YYYY [u] H:mm"),                         # Croatian
+    ("sr_sr", "D. MMMM YYYY. [у] H:mm"),                        # Serbian (Cyrillic)
 ]
 
 
@@ -95,7 +97,11 @@ class LocalizedDateParser(object):
                 return arrow.get(translated_timestamp, self.timestamp_format).datetime
             except arrow.parser.ParserError:
                 self.use_fallback = True
-                return self._parse_fallback(timestamp)
+                try:
+                    return self._parse_fallback(timestamp)
+                except ValueError as ve:
+                    if 'unsupported' not in str(ve).lower():
+                        raise ve
 
 _LOCALIZED_DATE_PARSERS = [
     LocalizedDateParser(x[0], x[1], x[2] if len(x) > 2 else {})
