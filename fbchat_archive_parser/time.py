@@ -136,6 +136,8 @@ for tz_name in pytz.all_timezones:
             offset = (int(offset_raw[1:3]), int(offset_raw[3:5]))
         offset += (offset_raw,)
         TIMEZONE_MAP[timezone_code][offset].add(tz_name)
+        # Apparently Facebook also uses the literal names. Let's throw those in too.
+        TIMEZONE_MAP[tz_name][offset] = set()
 
 
 class UnexpectedTimeFormatError(Exception):
