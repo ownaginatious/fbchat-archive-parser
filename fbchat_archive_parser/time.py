@@ -100,6 +100,7 @@ class LocalizedDateParser(object):
                 try:
                     return self._parse_fallback(timestamp)
                 except ValueError as ve:
+                    self.use_fallback = False
                     if 'unsupported' not in str(ve).lower():
                         raise ve
 
