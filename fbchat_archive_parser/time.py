@@ -40,7 +40,7 @@ FACEBOOK_TIMESTAMP_FORMATS = [
     ("es_es", "dddd, D [de] MMMM [de] YYYY [a las?] H:mm"),     # Spanish (General)
     ("hu_hu", "YYYY. MMMM D., H:mm"),                           # Hungarian
     ("it_it", "dddd D MMMM YYYY [alle ore] H:mm"),              # Italian (Italy)
-    ("sv_se", "D MMMM YYYY [kl] HH:mm"),                        # Swedish (Sweden)
+    ("sv_se", "D MMMM YYYY [kl.] HH:mm"),                       # Swedish (Sweden)
     ("nl_nl", "dddd D MMMM YYYY [om] H:mm"),                    # Dutch (Netherlands)
     ("da_dk", "D. MMMM YYYY [kl.] HH:mm"),                      # Danish (Denmark)
     ("ro_ro", "D MMMM YYYY [la] HH:mm"),                        # Romanian (Romania)

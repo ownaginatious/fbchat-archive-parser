@@ -57,7 +57,7 @@ class TestTimestamps(unittest.TestCase):
         self.run_timestamp_test(timestamp_raw)
 
     def test_swedish(self):
-        timestamp_raw = "den 4 december 2016 kl 13:54 UTC-07"
+        timestamp_raw = "den 4 december 2016 kl. 13:54 UTC-07"
         self.run_timestamp_test(timestamp_raw)
 
     def test_dutch(self):
