@@ -1,7 +1,5 @@
 from collections import namedtuple
 
-from sortedcontainers import SortedList
-
 from ._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
@@ -16,6 +14,13 @@ class FacebookChatHistory:
         self.threads = threads if threads else {}
         self.user = user
 
+    def sort(self):
+        """
+        Sort all the message in place.
+        """
+        for thread in self.threads.values():
+            thread.messages.sort()
+
 
 class ChatThread(object):
     """
@@ -26,7 +31,7 @@ class ChatThread(object):
     def __init__(self, participants):
         self.participants = list(participants)
         self.participants.sort()
-        self.messages = SortedList()
+        self.messages = list()
 
     def add_message(self, message):
         """
@@ -34,7 +39,7 @@ class ChatThread(object):
 
         message -- the message to add
         """
-        self.messages.add(message)
+        self.messages += [message]
         return self
 
     def __lt__(self, other):

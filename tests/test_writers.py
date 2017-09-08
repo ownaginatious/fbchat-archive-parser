@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 
 from datetime import datetime
-from io import BytesIO
+import io
 import unittest
 
 import pytz
@@ -31,10 +31,9 @@ class TestWriters(unittest.TestCase):
         }
 
         self.history = FacebookChatHistory(user="test_owner", threads=threads)
-        self.output = BytesIO()
+        self.output = io.BytesIO()
 
         if six.PY3:
-            import io
             self.output_handle = io.TextIOWrapper(self.output, encoding='UTF-8', errors='replace')
         else:
             from encodings.utf_8 import StreamWriter

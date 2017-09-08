@@ -1,10 +1,9 @@
 arrow
 babel
 bs4
-clip.py
+click
 colorama
 pytz
-sortedcontainers
 pyyaml
 six
 requests

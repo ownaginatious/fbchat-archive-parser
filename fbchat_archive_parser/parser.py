@@ -3,7 +3,6 @@ import re
 
 from collections import defaultdict
 import hashlib
-from io import open
 import sys
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import XMLParser
@@ -18,7 +17,7 @@ class FacebookDataError(Exception):
     pass
 
 
-class SafeXMLFile(object):
+class SafeXMLStream(object):
     """
     Let's implement our own stream filter to remove the inexplicably present
     control characters for us. We will analyze the incoming byte stream and
@@ -48,17 +47,8 @@ class SafeXMLFile(object):
         self.scrubber = re.compile('[%s]' % ''.join(illegal_ranges))
         self.stream = stream
 
-    def __enter__(self):
-        # Read the stream in at the character boundaries to ensure we are not
-        # accidentally extracting only partial characters in our buffers.
-        self.open_file = open(self.stream, 'rt', encoding='utf-8')
-        return self
-
-    def __exit__(self, *args):
-        self.open_file.close()
-
     def read(self, size=-1):
-        buff = self.open_file.read(size)
+        buff = self.stream.read(size)
         # The XML parser is dumb and seems to only utilize UTF-8
         # encoders/decoders if we hand it a byte stream. Fortunately, it
         # doesn't seem to care if it got more or less bytes then it asked for.
@@ -73,13 +63,10 @@ def _truncate(string, length=60):
 
 class MessageHtmlParser(object):
 
-    def __init__(self, path, timezone_hints=None, use_utc=True,
-                 progress_output=False, filter=None, name_resolver=None):
+    def __init__(self, handle, timezone_hints=None, use_utc=True,
+                 progress_output=False, thread_filter=None, name_resolver=None):
 
-        if not name_resolver:
-            self.name_resolver = DummyNameResolver()
-        else:
-            self.name_resolver = name_resolver
+        self.name_resolver = name_resolver or DummyNameResolver()
 
         self.chat_threads = dict()
         self.message_cache = None
@@ -90,18 +77,16 @@ class MessageHtmlParser(object):
         self.current_timestamp = None
         self.last_line_len = 0
 
-        self.path = path
+        self.handle = SafeXMLStream(handle)
         self.progress_output = progress_output
-        self.filter = tuple(p.lower() for p in filter) if filter else None
+        self.thread_filter = (
+            tuple(p.lower() for p in thread_filter) if thread_filter else None)
         self.seq_num = 0
         self.wait_for_next_thread = False
         self.thread_signatures = set()
-        self.timezone_hints = {}
+        self.timezone_hints = timezone_hints or {}
         self.use_utc = use_utc
         self.no_sender_warning = False
-
-        if timezone_hints:
-            self.timezone_hints = timezone_hints
 
     def parse(self):
         self._parse_content()
@@ -127,10 +112,9 @@ class MessageHtmlParser(object):
         # Cast to str to ensure not unicode under Python 2, as the parser
         # doesn't like that.
         parser = XMLParser(encoding=str('UTF-8'))
-        with SafeXMLFile(self.path) as f:
-            for pos, element in ET.iterparse(f, events=("start", "end"),
-                                             parser=parser):
-                self._process_element(pos, element)
+        for pos, element in ET.iterparse(self.handle, events=("start", "end"),
+                                         parser=parser):
+            self._process_element(pos, element)
 
         self._clear_output()
 
@@ -155,15 +139,15 @@ class MessageHtmlParser(object):
         participants -- the participants of the thread
                         (excluding the history owner)
         """
-        if not self.filter:
+        if not self.thread_filter:
             return True
-        if len(participants) != len(self.filter):
+        if len(participants) != len(self.thread_filter):
             return False
         participants = [[p.lower()] + p.lower().split(" ")
                         for p in participants]
         matches = defaultdict(set)
         for e, p in enumerate(participants):
-            for f in self.filter:
+            for f in self.thread_filter:
                 if f in p:
                     matches[f].add(e)
         matched = set()

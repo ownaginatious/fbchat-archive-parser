@@ -2,6 +2,7 @@
 
 from __future__ import unicode_literals
 
+import io
 import unittest
 import os
 from fbchat_archive_parser.parser import MessageHtmlParser
@@ -9,13 +10,13 @@ from fbchat_archive_parser.parser import MessageHtmlParser
 package_dir = os.path.dirname(os.path.abspath(__file__))
 
 
-class TestDataStructures(unittest.TestCase):
+class TestParsing(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        parser = MessageHtmlParser(
-                    os.path.join(package_dir, "simulated_data.htm"))
-        cls.fbc = parser.parse()
+        with io.open(os.path.join(package_dir, "simulated_data.htm"), encoding='utf8') as f:
+            parser = MessageHtmlParser(f)
+            cls.fbc = parser.parse()
 
     def test_num_threads(self):
         self.assertEqual(len(self.fbc.threads), 3)

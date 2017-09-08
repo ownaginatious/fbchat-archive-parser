@@ -237,23 +237,27 @@ Take a look at the help options to find out more!
 .. code:: text
 
     $ fbcap --help
-    fbcap: A program for converting Facebook chat history to a number of more usable formats
+    Usage: fbcap [OPTIONS] PATH
 
-    Usage: fbcap {{arguments}} {{options}}
-
-    Arguments:
-      path [text]  Path of the messages.htm file to parse
+      A program for converting Facebook chat history (messages.htm) to a number
+      of more usable formats.
 
     Options:
-      -h, --help              Show this help message and exit
-      -f, --format [str]      Format to convert to (csv, json, pretty-json, text, yaml, stats) (default: text)
-      -t, --thread [text]     Only include threads involving exactly the following comma-separated participants in output (-t 'Billy,Steve Jensson')
-      -z, --timezones [text]  Timezone disambiguators (TZ=OFFSET,[TZ=OFFSET[...]])
-      -d, --directory [text]  Write all output as a file per thread into a directory (subdirectory will be created)
-      -u, --utc               Use UTC timestamps in the output
-      -n, --nocolor           Do not colorize output
-      -p, --noprogress        Do not show progress output
-      -r, --resolve           [BETA] Resolve profile IDs to names by connecting to Facebook
+      -f, --format [csv|json|pretty-json|text|yaml|stats]
+                                      Format to convert to.
+      -t, --thread TEXT               Only include threads involving exactly the
+                                      following comma-separated participants in
+                                      output (-t 'Billy,Steve Smith')
+      -z, --timezones TEXT            Timezone disambiguators
+                                      (TZ=OFFSET,[TZ=OFFSET[...]])
+      -d, --directory PATH            Write all output as a file per thread into a
+                                      directory (subdirectory will be created)
+      -u, --utc                       Use UTC timestamps in the output
+      -n, --nocolor                   Do not colorize output
+      -p, --noprogress                Do not show progress output
+      -r, --resolve                   [BETA] Resolve profile IDs to names by
+                                      connecting to Facebook
+      --help                          Show this message and exit.
 
 Troubleshooting
 ===============

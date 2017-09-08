@@ -46,6 +46,7 @@ class TestDataStructures(unittest.TestCase):
 
             for m in p:
                 thread.add_message(m)
+            thread.messages.sort()
 
             self.assertEqual([1, 3, 2],
                              [int(m.content) for m in thread.messages])

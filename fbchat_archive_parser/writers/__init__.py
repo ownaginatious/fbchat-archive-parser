@@ -7,14 +7,15 @@ import shutil
 
 import six
 
-if six.PY2:
-    FileNotFoundError = OSError
-
 from .json import JsonWriter
 from .pretty_json import PrettyJsonWriter
 from .csv import CsvWriter
+from .stats import StatsWriter
 from .text import TextWriter
 from .yaml import YamlWriter
+
+if six.PY2:
+    FileNotFoundError = OSError
 
 _BUILTIN_WRITERS = {
     "json": JsonWriter,
@@ -22,6 +23,7 @@ _BUILTIN_WRITERS = {
     "csv": CsvWriter,
     "text": TextWriter,
     "yaml": YamlWriter,
+    "stats": StatsWriter
 }
 
 BUILTIN_WRITERS = tuple(sorted(list(_BUILTIN_WRITERS.keys())))
@@ -45,7 +47,7 @@ def write(fmt, data, stream_or_dir):
 def write_to_dir(writer, directory, data):
 
     output_dir = datetime.now().strftime("fbchat_dump_%Y%m%d%H%M")
-    directory = '%s/%s' % (directory, output_dir)
+    directory = os.path.join(directory, output_dir)
 
     try:
         shutil.rmtree(directory)

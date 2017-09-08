@@ -22,7 +22,7 @@ setup(
     test_suite="tests",
     entry_points={
         "console_scripts": [
-            "fbcap = fbchat_archive_parser.main:main",
+            "fbcap = fbchat_archive_parser.main:fbcap",
         ],
     },
 )
