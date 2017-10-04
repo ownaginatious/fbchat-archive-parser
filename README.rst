@@ -262,8 +262,8 @@ Take a look at the help options to find out more!
 Troubleshooting
 ===============
 
-Why are do some names appear as <some number>@facebook.com?
------------------------------------------------------------
+Why do some names appear as <some number>@facebook.com?
+-------------------------------------------------------
 
 For some reason, Facebook seems to randomly swap names for IDs. In recent times, it has gotten worse. You can
 have the parser resolve the names via Facebook itself with the ``--resolve`` flag. Keep in mind, this is a beta
