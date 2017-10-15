@@ -34,6 +34,11 @@ Unfortunately, the data is mostly unordered and impossible to load into
 your web browser (it can be several hundred megabytes in size). You're
 essentially forced to parse it if you want to analyze the content.
 
+**UPDATE:** As of October 2017, ``messages.htm`` just acts as a manifest
+for the contents of a directory called ``messages/``. The formatting is
+almost identical to before; just with each thread in its own file now.
+Both are required to use this tool.
+
 Why would I ever want my Facebook chat history?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
