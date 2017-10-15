@@ -1,4 +1,5 @@
 from collections import namedtuple
+import hashlib
 
 from ._version import get_versions
 __version__ = get_versions()['version']
@@ -41,6 +42,16 @@ class ChatThread(object):
         """
         self.messages += [message]
         return self
+
+    @property
+    def signature(self):
+        signature = hashlib.md5()
+
+        for m in self.messages:
+            signature.update(str(m.timestamp).encode('utf-8'))
+            signature.update(m.sender.encode('utf-8'))
+            signature.update(m.content.encode('utf-8'))
+        return signature
 
     def __lt__(self, other):
         return len(self.messages) < len(other.messages)

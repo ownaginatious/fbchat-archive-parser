@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import re
 import sys
 
@@ -5,7 +7,7 @@ import click
 import six
 
 from .writers import BUILTIN_WRITERS, write
-from .parser import MessageHtmlParser
+from .parser import parse, MissingReferenceError
 from .time import AmbiguousTimeZoneError, UnexpectedTimeFormatError
 from .utils import (set_stream_color, set_all_color, error,
                     reset_terminal_styling)
@@ -112,10 +114,9 @@ def fbcap(path, thread, fmt, nocolor, timezones, utc, noprogress, resolve, direc
     exit_code = 0
     try:
         with path as f:
-            parser = MessageHtmlParser(
+            fbch = parse(
                 handle=f, thread_filter=thread, timezone_hints=timezones,
                 progress_output=not noprogress, use_utc=utc, name_resolver=resolve)
-            fbch = parser.parse()
         sort_message = u'Sorting messages...'
         sys.stderr.write(sort_message)
         fbch.sort()
@@ -127,27 +128,38 @@ def fbcap(path, thread, fmt, nocolor, timezones, utc, noprogress, resolve, direc
 
     except AmbiguousTimeZoneError as atze:
         error(u"\nAmbiguous timezone offset found [%s]. Please re-run the "
-              "parser with the -z TZ=OFFSET[,TZ=OFFSET2[,...]] flag."
-              "(e.g. -z PST=-0800,PDT=-0700). Your options are as "
-              "follows:\n" % atze.tz_name)
+              u"parser with the -z TZ=OFFSET[,TZ=OFFSET2[,...]] flag."
+              u"(e.g. -z PST=-0800,PDT=-0700). Your options are as "
+              u"follows:\n" % atze.tz_name)
         for k, v in atze.tz_options.items():
             regions = ', '.join(list(v)[:3])
             error(u" -> [%s] for regions like %s\n" % (k[-1], regions))
         exit_code = 1
     except UnexpectedTimeFormatError as utfe:
         error(u"\nUnexpected time format in \"%s\". If you downloaded your "
-              "Facebook data in a language other than English, then it's "
-              "possible support may need to be added to this tool.\n\n"
-              "Please report this as a bug on the associated GitHub page "
-              "and it will be fixed promptly.\n"
+              u"Facebook data in a language other than English, then it's "
+              u"possible support may need to be added to this tool.\n\n"
+              u"Please report this as a bug on the associated GitHub page "
+              u"and it will be fixed promptly.\n"
               % utfe.time_string)
         exit_code = 1
+    except MissingReferenceError as upe:
+        error(u"\nUnable to locate the referenced chat file \"%s\". Please "
+              u"ensure that your \"messages.htm\" file is relative to your "
+              u"\"messages/\" directory in the following way while parsing:\n\n"
+              u"    ├── html/\n"
+              u"    │   ├── ...\n"
+              u"    │   ├── messages.htm\n"
+              u"    ├── messages/\n\n" % upe)
+        exit_code = 1
+
     except KeyboardInterrupt:
         error(u"\nInterrupted prematurely by keyboard\n")
         exit_code = 1
     finally:
         reset_terminal_styling()
     sys.exit(exit_code)
+
 
 if __name__ == '__main__':
     fbcap()
