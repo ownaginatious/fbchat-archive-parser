@@ -52,6 +52,7 @@ FACEBOOK_TIMESTAMP_FORMATS = [
     ("hr_hr", "D. MMMM YYYY [u] H:mm"),                         # Croatian
     ("sr_sr", "D. MMMM YYYY. [у] H:mm"),                        # Serbian (Cyrillic)
     ("fi_fi", "D. MMMM YYYY [kello] H:mm"),                     # Finnish
+    ("ru_ru", "D MMMM YYYY [г. в] H:mm"),                       #Russian
 ]
 
 
