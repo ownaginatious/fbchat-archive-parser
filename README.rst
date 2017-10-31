@@ -68,6 +68,12 @@ Python 2.7:
 
     pip install fbchat-archive-parser
 
+If you already have an older version installed, you can upgrade to the latest with the following command:
+
+.. code:: bash
+
+    pip install --upgrade fbchat-archive-parser
+
 How does it work?
 ~~~~~~~~~~~~~~~~~
 
