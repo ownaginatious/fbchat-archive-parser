@@ -61,3 +61,5 @@ messages.htm
 
 # PyCharm project files
 .idea/
+
+test_data/

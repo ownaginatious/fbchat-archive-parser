@@ -415,7 +415,7 @@ class SplitMessageHtmlParser(MessageHtmlParser):
                     continue
                 saw_anchor = True
                 participants = self.parse_participants(element)
-                thread_path = element.attrib['href'][3:]
+                thread_path = re.sub(r'^../', '', element.attrib['href'])
                 self.process_thread(participants, thread_path)
 
         if not saw_anchor:
