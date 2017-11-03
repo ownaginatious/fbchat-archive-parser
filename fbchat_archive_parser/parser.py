@@ -391,7 +391,7 @@ class SplitMessageHtmlParser(MessageHtmlParser):
 
     def __init__(self, handle, *args, **kwargs):
         super(SplitMessageHtmlParser, self).__init__(handle, *args, **kwargs)
-        self.root = os.path.join(os.getcwd(), handle.name)
+        self.root = os.path.realpath(handle.name)
         self.root = "/".join(self.root.split('/')[:-2])
 
     def parse_impl(self):
