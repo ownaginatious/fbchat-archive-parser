@@ -1,9 +1,10 @@
 from __future__ import unicode_literals
-import io
-import os
-import re
 
 from collections import defaultdict
+import io
+import os
+import platform
+import re
 import sys
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import XMLParser
@@ -357,6 +358,10 @@ class MessageHtmlParser(object):
             sys.stderr.flush()
 
 
+def using_windows():
+    return 'windows' in platform.platform().lower()
+
+
 class LegacyMessageHtmlParser(MessageHtmlParser):
     """
     A parser for the original archive format Facebook used until October 2017.
@@ -392,7 +397,8 @@ class SplitMessageHtmlParser(MessageHtmlParser):
     def __init__(self, handle, *args, **kwargs):
         super(SplitMessageHtmlParser, self).__init__(handle, *args, **kwargs)
         self.root = os.path.realpath(handle.name)
-        self.root = "/".join(self.root.split('/')[:-2])
+        delimiter = '\\' if using_windows() else '/'
+        self.root = delimiter.join(self.root.split(delimiter)[:-2])
 
     def parse_impl(self):
 
@@ -416,6 +422,8 @@ class SplitMessageHtmlParser(MessageHtmlParser):
                 saw_anchor = True
                 participants = self.parse_participants(element)
                 thread_path = re.sub(r'^../', '', element.attrib['href'])
+                if using_windows():
+                    thread_path = thread_path.replace('/', '\\')
                 self.process_thread(participants, thread_path)
 
         if not saw_anchor:
