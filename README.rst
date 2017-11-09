@@ -1,5 +1,7 @@
-Facebook Chat Archive Parser |Build Status|
-===========================================
+Facebook Chat Archive Parser
+============================
+
+|PyPI Version| |Python Versions| |Build Status|
 
 A small tool and library for parsing chat history from a Facebook data
 archive into more usable formats.
@@ -298,6 +300,12 @@ chat archive is generally conversations with people who you have most recently t
 seems to be the complete history for each conversation and nothing gets truncated.
 
 Unfortunately, this cannot be remedied unless Facebook fixes the problem on their end.
+
+.. |PyPI Version| image:: https://badge.fury.io/py/fbchat-archive-parser.svg
+    :target: https://badge.fury.io/py/fbchat-archive-parser
+
+.. |Python Versions| image:: https://img.shields.io/pypi/pyversions/fbchat-archive-parser.svg
+    :target: https://github.com/ownaginatious/fbchat-archive-parser/blob/master/setup.py
 
 .. |Build Status| image:: https://travis-ci.org/ownaginatious/fbchat-archive-parser.svg?branch=master
    :target: https://travis-ci.org/ownaginatious/fbchat-archive-parser
