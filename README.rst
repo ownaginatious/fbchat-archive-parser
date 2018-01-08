@@ -242,6 +242,13 @@ remember the last name), the system will try to compensate.
 .. figure:: http://i.imgur.com/IJzD1LE.png
    :alt: filter second and third
 
+What happens to my messages that are pictures?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As of January 2018, Facebook seems to be including referenced images in download archives. Image
+messages will be converted to text references in the following format:
+``(image reference: messages/photos/<picture id>.jpg)``
+
 What else can I do?
 ===================
 

@@ -103,6 +103,7 @@ class ChatThreadParser(object):
         self.messages = None
         self.current_sender = None
         self.current_timestamp = None
+        self.current_text = None
 
         self.element_iter = element_iter
         self.seq_num = seq_num
@@ -110,6 +111,7 @@ class ChatThreadParser(object):
         self.use_utc = use_utc
         self.no_sender_warning_status = no_sender_warning_status
         self.messages = []
+        self.messages_started = False
 
     def parse(self, participants):
         self.messages = []
@@ -145,15 +147,25 @@ class ChatThreadParser(object):
         """
         tag, class_attr = _tag_and_class_attr(e)
 
-        if tag == "div" and "thread" in class_attr and pos == "end":
-            return True
+        start_of_message = tag == 'div' and class_attr == 'message' and pos == 'start'
+        end_of_thread = tag == 'div' and 'thread' in class_attr and pos == 'end'
+
+        if start_of_message and not self.messages_started:
+            self.messages_started = True
         elif tag == "span" and pos == "end":
             if "user" in class_attr:
                 self.current_sender = self.name_resolver.resolve(e.text)
             elif "meta" in class_attr:
                 self.current_timestamp =\
                     parse_timestamp(e.text, self.use_utc, self.timezone_hints)
-        elif tag == "p" and pos == "end":
+        elif tag == 'p' and pos == 'end':
+            # This is only necessary because of accidental double <p> nesting on
+            # Facebook's end. Clearly, QA and testing is one of Facebook's strengths ;)
+            if not self.current_text:
+                self.current_text = e.text.strip() if e.text else ''
+        elif tag == 'img' and pos == 'start':
+            self.current_text = '(image reference: {})'.format(e.attrib['src'])
+        elif (start_of_message or end_of_thread) and self.messages_started:
             if not self.current_timestamp:
                 # This is the typical error when the new Facebook format is
                 # used with the legacy parser.
@@ -170,14 +182,14 @@ class ChatThreadParser(object):
 
             cm = ChatMessage(timestamp=self.current_timestamp,
                              sender=self.current_sender,
-                             content=e.text.strip() if e.text else "",
+                             content=self.current_text or '',
                              seq_num=self.seq_num)
             self.messages += [cm]
 
             self.seq_num -= 1
-            self.current_sender, self.current_timestamp = None, None
+            self.current_sender, self.current_timestamp, self.current_text = None, None, None
 
-        return False
+        return end_of_thread
 
 
 class MessageHtmlParser(object):
@@ -333,15 +345,16 @@ class MessageHtmlParser(object):
             for m in thread.messages:
                 existing_thread.add_message(m)
 
-    def parse_participants(self, participants_element):
-        if not participants_element.text:
-            return ()
-        if participants_element.attrib:
-            participants_text = participants_element.text.strip()
-        else:
-            participants_text = participants_element.contents[0].strip()
+    def parse_participants(self, participants):
+        if not isinstance(participants, six.text_type):
+            if not participants.text:
+                return ()
+            if participants.attrib:
+                participants = participants.text.strip()
+            else:
+                participants = participants.contents[0].strip()
         participants = [self.name_resolver.resolve(p)
-                        for p in participants_text.split(", ")]
+                        for p in participants.split(", ")]
         participants.sort()
         if self.user in participants:
             participants.remove(self.user)
@@ -402,6 +415,16 @@ class SplitMessageHtmlParser(MessageHtmlParser):
 
     def parse_impl(self):
 
+        self.user, thread_references = self._get_manifest_data()
+
+        for participants, thread_path in thread_references:
+            self.process_thread(participants, thread_path)
+        self._clear_output()
+
+    def _get_manifest_data(self):
+
+        user, thread_references = None, []
+
         ignore_anchors = True
         saw_anchor = False
 
@@ -413,7 +436,7 @@ class SplitMessageHtmlParser(MessageHtmlParser):
             tag, class_attr = _tag_and_class_attr(element)
             if tag == "h1" and pos == "end":
                 if not self.user:
-                    self.user = element.text.strip()
+                    user = element.text.strip()
             elif tag == "div" and "content" in class_attr and pos == "start":
                 ignore_anchors = False
             elif tag == "a" and pos == "start":
@@ -424,14 +447,13 @@ class SplitMessageHtmlParser(MessageHtmlParser):
                 thread_path = re.sub(r'^../', '', element.attrib['href'])
                 if using_windows():
                     thread_path = thread_path.replace('/', '\\')
-                self.process_thread(participants, thread_path)
+                thread_references += [(participants, thread_path)]
 
         if not saw_anchor:
             # Indicator of a `messages.htm` file that is probably in the legacy format.
             raise UnsuitableParserError
 
-        self._clear_output()
-        return FacebookChatHistory(self.user, self.chat_threads)
+        return user, thread_references
 
     def process_thread(self, participants, thread_path):
 
@@ -448,8 +470,49 @@ class SplitMessageHtmlParser(MessageHtmlParser):
         self.save_thread(thread)
 
 
+class SplitMessageHtmlWithImagesParser(SplitMessageHtmlParser):
+    """
+    A parser for the archive format Facebook started using around January 2018.
+    """
+
+    _PARTICIPANT_PARSER = re.compile(r'</h3>Participants: ([^<]+)<div')
+
+    def parse_impl(self):
+
+        # Trying to correlate the manifest to anything is janky as hell and more or less
+        # a lost cause at this point. Facebook made the participant information lossy
+        # in the manifest, so we have to get it from the thread files. To maintain backwards
+        # compatibility (and honestly sanity...), let's just dredge the lossless
+        # participant data directly from the message HTML files with regex and then parse them.
+
+        self.user, thread_references = self._get_manifest_data()
+
+        for participants, thread_path in thread_references:
+            with io.open(thread_path, 'rt', encoding='utf8') as f:
+                # Let's just read enough for the preamble (~5,000 characters
+                # is probably sufficient.
+                m = self._PARTICIPANT_PARSER.search(f.read(5000))
+                # Users who have disabled their account will be lack participant info.
+                # We will synthesize it in this case.
+                if not m:
+                    if participants:
+                        raise UnsuitableParserError
+                else:
+                    # Un-escape any HTML entities.
+                    import bs4
+                    unescaped = str(bs4.BeautifulSoup(m.group(1), 'html.parser'))
+                    participants = self.parse_participants(unescaped)
+                self.process_thread(participants, thread_path)
+
+
 def parse(handle, *args, **kwargs):
-    for parser in (SplitMessageHtmlParser, LegacyMessageHtmlParser):
+
+    # We support every archive format since Facebook invented the
+    # 'Download your Data' feature. We successively back-peddle
+    # until we find a parser that works.
+    for parser in (SplitMessageHtmlWithImagesParser,
+                   SplitMessageHtmlParser,
+                   LegacyMessageHtmlParser):
         try:
             return parser(handle, *args, **kwargs).parse()
         except UnsuitableParserError:
