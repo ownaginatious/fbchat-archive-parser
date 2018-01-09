@@ -346,7 +346,9 @@ class MessageHtmlParser(object):
                 existing_thread.add_message(m)
 
     def parse_participants(self, participants):
-        if not isinstance(participants, six.text_type):
+        if not participants:
+            return ()
+        if not isinstance(participants, six.string_types):
             if not participants.text:
                 return ()
             if participants.attrib:
@@ -500,7 +502,7 @@ class SplitMessageHtmlWithImagesParser(SplitMessageHtmlParser):
                 else:
                     # Un-escape any HTML entities.
                     import bs4
-                    unescaped = str(bs4.BeautifulSoup(m.group(1), 'html.parser'))
+                    unescaped = six.text_type(bs4.BeautifulSoup(m.group(1), 'html.parser'))
                     participants = self.parse_participants(unescaped)
                 self.process_thread(participants, thread_path)
 
