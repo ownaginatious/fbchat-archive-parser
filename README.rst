@@ -308,8 +308,8 @@ seems to be the complete history for each conversation and nothing gets truncate
 
 Unfortunately, this cannot be remedied unless Facebook fixes the problem on their end.
 
-.. |PyPI Version| image:: https://badge.fury.io/py/fbchat-archive-parser.svg
-    :target: https://badge.fury.io/py/fbchat-archive-parser
+.. |PyPI Version| image:: https://badge.fury.io/py/fbchat_archive_parser.svg
+    :target: https://pypi.org/project/fbchat_archive_parser/ 
 
 .. |Python Versions| image:: https://img.shields.io/pypi/pyversions/fbchat-archive-parser.svg
     :target: https://github.com/ownaginatious/fbchat-archive-parser/blob/master/setup.py

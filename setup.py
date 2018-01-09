@@ -15,7 +15,13 @@ setup(
     url='https://github.com/ownaginatious/fbchat-archive-parser',
     license='MIT',
     keywords=['facebook', 'chat', 'messenger', 'history'],
-    classifiers=['Environment :: Console'],
+    classifiers=[
+        'Environment :: Console',
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6'
+    ],
     install_requires=[line.strip()
                       for line in open("requirements.txt", "r",
                                        encoding="utf-8").readlines()],
