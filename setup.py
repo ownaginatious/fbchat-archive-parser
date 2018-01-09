@@ -8,8 +8,8 @@ setup(
     packages=find_packages(exclude=["tests"]),
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    description='A library/command line utility for parsing Facebook '
-                'chat history',
+    description='A library/command line utility for parsing Facebook chat history',
+    long_description=open('README.rst').read(),
     author='Dillon Dixon',
     author_email='dillondixon@gmail.com',
     url='https://github.com/ownaginatious/fbchat-archive-parser',
