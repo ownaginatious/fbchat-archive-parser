@@ -449,7 +449,7 @@ class SplitMessageHtmlParser(MessageHtmlParser):
                 thread_path = re.sub(r'^../', '', element.attrib['href'])
                 if using_windows():
                     thread_path = thread_path.replace('/', '\\')
-                thread_references += [(participants, thread_path)]
+                thread_references += [(participants, os.path.join(self.root, thread_path))]
 
         if not saw_anchor:
             # Indicator of a `messages.htm` file that is probably in the legacy format.
