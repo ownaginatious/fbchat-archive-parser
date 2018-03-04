@@ -79,7 +79,7 @@ If you already have an older version installed, you can upgrade to the latest wi
 How does it work?
 ~~~~~~~~~~~~~~~~~
 
-Simply run the command ``fbcap`` in your terminal with your
+Under the ``html/`` folder simply run the command ``fbcap`` in your terminal with your
 ``messages.htm`` file as the argument.
 
 .. code:: bash
@@ -267,14 +267,14 @@ Take a look at the help options to find out more!
                                       Format to convert to.
       -t, --thread TEXT               Only include threads involving exactly the
                                       following comma-separated participants in
-                                      output (-t 'Billy,Steve Smith')
+                                      output (-t 'Billy,Steve Smith').
       -z, --timezones TEXT            Timezone disambiguators
-                                      (TZ=OFFSET,[TZ=OFFSET[...]])
+                                      (TZ=OFFSET,[TZ=OFFSET[...]]).
       -d, --directory PATH            Write all output as a file per thread into a
-                                      directory (subdirectory will be created)
-      -u, --utc                       Use UTC timestamps in the output
-      -n, --nocolor                   Do not colorize output
-      -p, --noprogress                Do not show progress output
+                                      directory (subdirectory will be created).
+      -u, --utc                       Use UTC timestamps in the output.
+      -n, --nocolor                   Do not colorize output.
+      -p, --noprogress                Do not show progress output.
       -r, --resolve                   [BETA] Resolve profile IDs to names by
                                       connecting to Facebook
       --help                          Show this message and exit.
@@ -307,6 +307,14 @@ chat archive is generally conversations with people who you have most recently t
 seems to be the complete history for each conversation and nothing gets truncated.
 
 Unfortunately, this cannot be remedied unless Facebook fixes the problem on their end.
+
+Why are repeated names not showing?
+----------------------------------------
+
+Multiple users with equal names in group chats are shown as a single user. This has to do with Facebook's
+presentation of names in the messages files, which doesn't make this distintion.
+
+This also cannot be remedied unless Facebook fixes the problem.
 
 .. |PyPI Version| image:: https://badge.fury.io/py/fbchat_archive_parser.svg
     :target: https://pypi.org/project/fbchat_archive_parser/ 
