@@ -312,7 +312,7 @@ Why are repeated names not showing?
 ----------------------------------------
 
 Multiple users with equal names in group chats are shown as a single user. This has to do with Facebook's
-presentation of names in the messages files, which doesn't make this distintion.
+presentation of names in the messages files, which doesn't make this distinction.
 
 This also cannot be remedied unless Facebook fixes the problem.
 
