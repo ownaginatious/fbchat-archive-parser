@@ -309,10 +309,10 @@ seems to be the complete history for each conversation and nothing gets truncate
 Unfortunately, this cannot be remedied unless Facebook fixes the problem on their end.
 
 Why are repeated names not showing?
-----------------------------------------
+-----------------------------------
 
 Multiple users with equal names in group chats are shown as a single user. This has to do with Facebook's
-presentation of names in the messages files, which doesn't make this distinction.
+presentation of names in the message files, which doesn't make this distinction.
 
 This also cannot be remedied unless Facebook fixes the problem.
 
