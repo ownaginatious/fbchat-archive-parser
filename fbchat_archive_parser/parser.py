@@ -177,7 +177,7 @@ class ChatThreadParser(object):
                         "This is an error on Facebook's end that unfortunately cannot be "
                         "recovered from. Some or all messages in the output may show the "
                         "sender as 'Unknown' within each thread.\n")
-                    self.no_sender_warning = True
+                    self.no_sender_warning_status = True
                 self.current_sender = "Unknown"
 
             cm = ChatMessage(timestamp=self.current_timestamp,
@@ -489,21 +489,34 @@ class SplitMessageHtmlWithImagesParser(SplitMessageHtmlParser):
 
         self.user, thread_references = self._get_manifest_data()
 
+        unknown_user_count = 0
+
         for participants, thread_path in thread_references:
             with io.open(thread_path, 'rt', encoding='utf8') as f:
                 # Let's just read enough for the preamble (~5,000 characters
                 # is probably sufficient.
                 m = self._PARTICIPANT_PARSER.search(f.read(5000))
-                # Users who have disabled their account will be lack participant info.
-                # We will synthesize it in this case.
-                if not m:
-                    if participants:
-                        raise UnsuitableParserError
-                else:
+                if m:
                     # Un-escape any HTML entities.
                     import bs4
                     unescaped = six.text_type(bs4.BeautifulSoup(m.group(1), 'html.parser'))
                     participants = self.parse_participants(unescaped)
+                else:
+                    # Sometimes threads will appear without participants. These appear to be
+                    # users who have deleted themselves or blocked you. Not sure why this
+                    # occurs. We will throw them in with the "Facebook User"s and deal with
+                    # it downstream.
+                    if participants:
+                        raise UnsuitableParserError
+                    participants = ('Facebook User',)
+
+                # Under certain circumstances, conversation history for disabled users, or
+                # users who have blocked you, will be saved under the name "Facebook User".
+                # We should artificially differentiate these threads so all the messages don't
+                # get lumped into a single chat thread.
+                if participants == ('Facebook User',):
+                    participants = ('Unknown user #{:03d}'.format(unknown_user_count),)
+                    unknown_user_count += 1
                 self.process_thread(participants, thread_path)
 
 
