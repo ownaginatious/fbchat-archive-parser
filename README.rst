@@ -16,9 +16,8 @@ There are two options for history retrieval:
    window you're interested in (or simulates that with API calls),
    progressively getting more of your chat history.
 
-2. Ask Facebook for an archive of *all* your data
-   `here <https://www.facebook.com/dyi>`__ , and wait a couple of days
-   for a zip archive.
+2. Ask Facebook for a zip archive of *all* your data
+   `here <https://www.facebook.com/dyi>`__ .
 
 The second option is the only practical way to obtain *everything* in a
 timely manner.
@@ -54,7 +53,7 @@ Here comes the Facebook Chat Archive Parser!
 --------------------------------------------
 
 The Facebook Chat Archive Parser is a command line tool (and library for
-advanced users) to easily transform your ``messages.htm`` file into
+advanced users) used to easily transform your ``messages.htm`` file into
 a useful format.
 
 How do I get it?
@@ -155,7 +154,7 @@ Of course!
     ...
 
 What about that YAML?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 For sure!
 
