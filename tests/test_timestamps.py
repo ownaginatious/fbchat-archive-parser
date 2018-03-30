@@ -114,5 +114,9 @@ class TestTimestamps(unittest.TestCase):
         timestamp_raw = "4 декабря 2016 г. в 13:54 UTC-07"
         self.run_timestamp_test(timestamp_raw)
 
+    def test_lithuanian(self):
+        timestamp_raw = "2016 m. gruodis 4 d., 13:54 UTC-07"
+        self.run_timestamp_test(timestamp_raw)
+
 if __name__ == '__main__':
     unittest.main()
