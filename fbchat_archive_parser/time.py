@@ -53,6 +53,13 @@ FACEBOOK_TIMESTAMP_FORMATS = [
     ("sr_sr", "D. MMMM YYYY. [у] H:mm"),                        # Serbian (Cyrillic)
     ("fi_fi", "D. MMMM YYYY [kello] H:mm"),                     # Finnish
     ("ru_ru", "D MMMM YYYY [г. в] H:mm"),                       # Russian
+    ("lt_lt", "YYYY [m.] MMMM D [d.,] HH:mm",                   # Lithuanian
+            {'sausis': 1, 'vasaris': 2, 'kovas': 3,
+             'balandis': 4, 'gegužė': 5, 'birželis': 6,
+             'liepa': 7, 'rugpjūtis': 8, 'rugsėjis': 9,
+             'spalis': 10, 'lapkritis': 11, 'gruodis': 12
+             }
+     ),
 ]
 
 
