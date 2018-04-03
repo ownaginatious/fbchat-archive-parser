@@ -59,7 +59,16 @@ FACEBOOK_TIMESTAMP_FORMATS = [
              'liepa': 7, 'rugpjūtis': 8, 'rugsėjis': 9,
              'spalis': 10, 'lapkritis': 11, 'gruodis': 12
              }
-     ),
+    ),
+    ("en_us", "dddd, MMMM D, YYYY [@] h:mmA",                   # Leet Speak
+            {'J4nu4ry': 1, 'F3bru4ry': 2, 'm4rch': 3,
+             '4pr!1': 4, 'M4y': 5, 'j00n': 6,
+             'j00lai': 7, '4ugu57': 8, '53p73mb3r': 9,
+             '0c70b3r': 10, 'n0v3mb3r': 11, 'd3c3mb3r': 12, 'D3c3mb3r': 12,
+             'M0nd4y' : 1, '2u5d4y': 2, 'W3dn3sd4y': 3, '7hur5d4y': 4,
+             'r3b3cc4 b14k d4y' : 5, '547rD4y': 6, '5uNd4Y' : 7
+            }
+    )
 ]
 
 
@@ -70,7 +79,6 @@ class LocalizedDateParser(object):
     """
 
     def __init__(self, locale_id, timestamp_format, hints=None):
-
         self.locale_id = locale_id
         self.use_fallback = False
         self.original_timestamp_format = timestamp_format
