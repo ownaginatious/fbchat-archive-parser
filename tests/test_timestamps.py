@@ -118,5 +118,9 @@ class TestTimestamps(unittest.TestCase):
         timestamp_raw = "2016 m. gruodis 4 d., 13:54 UTC-07"
         self.run_timestamp_test(timestamp_raw)
 
+    def test_leet_speak(self):
+        timestamp_raw = "5uNd4Y, d3c3mb3r 4, 2016 @ 1:54pm PDT"
+        self.run_timestamp_test(timestamp_raw)
+
 if __name__ == '__main__':
     unittest.main()
