@@ -46,6 +46,7 @@ FACEBOOK_TIMESTAMP_FORMATS = [
     ("ro_ro", "D MMMM YYYY [la] HH:mm"),                        # Romanian (Romania)
     ("sl_si", "D. MMMM YYYY [ob] H:mm"),                        # Slovenian
     ("cs_cz", "D. MMMM YYYY [v] H:mm"),                         # Czech
+    ("sk_sk", "D. MMMM YYYY, H:mm"),                            # Slovak
     ("pt_br", "D [de] MMMM [de] YYYY [às] HH:mm"),              # Portuguese (Brazil)
     ("pt_pt", "dddd, D [de] MMMM [de] YYYY [às] HH:mm"),        # Portuguese (Portugal)
     ("pl_pl", "D MMMM YYYY [o] HH:mm"),                         # Polish
