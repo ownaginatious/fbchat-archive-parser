@@ -81,7 +81,7 @@ class TestTimestamps(unittest.TestCase):
         self.run_timestamp_test(timestamp_raw)
 
     def test_slovak(self):
-        timestamp_raw = "5. december 2017, 9:02 UTC+01"
+        timestamp_raw = "4. december 2016, 13:54 UTC-07"
         self.run_timestamp_test(timestamp_raw)
 
     def test_portuguese_brazil(self):
@@ -125,6 +125,7 @@ class TestTimestamps(unittest.TestCase):
     def test_leet_speak(self):
         timestamp_raw = "5uNd4Y, d3c3mb3r 4, 2016 @ 1:54pm PDT"
         self.run_timestamp_test(timestamp_raw)
+
 
 if __name__ == '__main__':
     unittest.main()
