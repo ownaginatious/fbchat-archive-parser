@@ -136,7 +136,7 @@ Of course!
 
 .. code:: bash
 
-    fbcap ./messages.htm -f csv
+    fbcap messages ./messages.htm -f csv
 
 .. code:: text
 
@@ -308,7 +308,7 @@ Facebook seems to randomly swap names for IDs. As of late, this seems to be much
 
 .. code:: text
 
-    $ fbcap ./messages.htm -t second --resolve
+    $ fbcap messages ./messages.htm -t second --resolve
     Facebook username/email: facebook_username
     Facebook password:
 
