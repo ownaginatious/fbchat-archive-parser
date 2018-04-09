@@ -6,12 +6,15 @@ import sys
 import click
 import six
 
+import contextlib
+
 from .writers import BUILTIN_WRITERS, write
 from .parser import parse, MissingReferenceError
 from .time import AmbiguousTimeZoneError, UnexpectedTimeFormatError
 from .utils import (set_stream_color, set_all_color, error,
                     reset_terminal_styling)
 from .name_resolver import FacebookNameResolver
+from .stats import ChatHistoryStatistics
 
 # Python 3 is supposed to be smart enough to not ever default to the 'ascii'
 # encoder, but apparently on Windows that may not be the case.
@@ -75,43 +78,24 @@ def parse_thread_filters(ctx, param, value):
     return tuple(friend.strip() for friend in thread.split(","))
 
 
-@click.command()
-@click.option('-f', '--format', 'fmt', default='text',
-              type=click.Choice(BUILTIN_WRITERS + ('stats',)),
-              help='Format to convert to.')
-@click.option('-t', '--thread', callback=parse_thread_filters,
-              default=None, type=click.STRING,
-              help='Only include threads involving exactly the following '
-                   'comma-separated participants in output '
-                   '(-t \'Billy,Steve Smith\')')
-@click.option('-z', '--timezones', callback=validate_timezones, type=click.STRING,
-              help='Timezone disambiguators (TZ=OFFSET,[TZ=OFFSET[...]])')
-@click.option('-d', '--directory', default=None, type=click.Path(),
-              help='Write all output as a file per thread into a directory '
-                   '(subdirectory will be created)')
-@click.option('-u', '--utc', is_flag=True,
-              help='Use UTC timestamps in the output')
-@click.option('-n', '--nocolor', is_flag=True,
-              help='Do not colorize output')
-@click.option('-p', '--noprogress', is_flag=True,
-              help='Do not show progress output')
-@click.option('-r', '--resolve', callback=collect_facebook_credentials, is_flag=True,
-              help='[BETA] Resolve profile IDs to names by connecting to Facebook')
-@click.argument('path', type=click.File('rt', encoding='utf8'))
-def fbcap(path, thread, fmt, nocolor, timezones, utc, noprogress, resolve, directory):
-    """
-    A program for converting Facebook chat history (messages.htm) to a number of more
-    usable formats.
-    """
-    if fmt == 'stats' and directory:
-        error('Unsupported operation error: Statistics cannot be written to a directory.\n')
-        sys.exit(1)
+@contextlib.contextmanager
+def colorize_output(nocolor):
 
     # Make stderr colorized unless explicitly disabled.
     set_stream_color(sys.stderr, disabled=nocolor or not sys.stderr.isatty())
     set_stream_color(sys.stdout, disabled=nocolor or not sys.stdout.isatty())
 
-    exit_code = 0
+    yield
+
+    reset_terminal_styling()
+
+
+class ProcessingFailure(Exception):
+    pass
+
+
+def _process_history(path, thread, timezones, utc, noprogress, resolve):
+
     try:
         with path as f:
             fbch = parse(
@@ -121,10 +105,7 @@ def fbcap(path, thread, fmt, nocolor, timezones, utc, noprogress, resolve, direc
         sys.stderr.write(sort_message)
         fbch.sort()
         sys.stderr.write('\r%s\r' % (" " * len(sort_message)))
-
-        if directory:
-            set_all_color(enabled=False)
-        write(fmt, fbch, directory or sys.stdout)
+        return fbch
 
     except AmbiguousTimeZoneError as atze:
         error(u"\nAmbiguous timezone offset found [%s]. Please re-run the "
@@ -134,7 +115,6 @@ def fbcap(path, thread, fmt, nocolor, timezones, utc, noprogress, resolve, direc
         for k, v in atze.tz_options.items():
             regions = ', '.join(list(v)[:3])
             error(u" -> [%s] for regions like %s\n" % (k[-1], regions))
-        exit_code = 1
     except UnexpectedTimeFormatError as utfe:
         error(u"\nUnexpected time format in \"%s\". If you downloaded your "
               u"Facebook data in a language other than English, then it's "
@@ -142,7 +122,6 @@ def fbcap(path, thread, fmt, nocolor, timezones, utc, noprogress, resolve, direc
               u"Please report this as a bug on the associated GitHub page "
               u"and it will be fixed promptly.\n"
               % utfe.time_string)
-        exit_code = 1
     except MissingReferenceError as upe:
         error(u"\nUnable to locate the referenced chat file \"%s\". Please "
               u"ensure that your \"messages.htm\" file is relative to your "
@@ -151,14 +130,95 @@ def fbcap(path, thread, fmt, nocolor, timezones, utc, noprogress, resolve, direc
               u"    │   ├── ...\n"
               u"    │   ├── messages.htm\n"
               u"    ├── messages/\n\n" % upe)
-        exit_code = 1
-
     except KeyboardInterrupt:
         error(u"\nInterrupted prematurely by keyboard\n")
-        exit_code = 1
-    finally:
-        reset_terminal_styling()
-    sys.exit(exit_code)
+
+    raise ProcessingFailure()
+
+
+@click.group()
+def fbcap():
+    """
+    A program for conversion and analysis of Facebook chat history.
+    """
+
+
+def common_options(f):
+    f = click.option('-z', '--timezones', callback=validate_timezones, type=click.STRING,
+                     help='Timezone disambiguators (TZ=OFFSET,[TZ=OFFSET[...]])')(f)
+    f = click.option('-u', '--utc', is_flag=True,
+                     help='Use UTC timestamps in the output')(f)
+    f = click.option('-n', '--nocolor', is_flag=True,
+                     help='Do not colorize output')(f)
+    f = click.option('-p', '--noprogress', is_flag=True,
+                     help='Do not show progress output')(f)
+    f = click.option('-r', '--resolve', callback=collect_facebook_credentials, is_flag=True,
+                     help='[BETA] Resolve profile IDs to names by connecting to Facebook')(f)
+    f = click.argument('path', type=click.File('rt', encoding='utf8'))(f)
+    return f
+
+
+@fbcap.command()
+@click.option('-f', '--format', 'fmt', default='text',
+              type=click.Choice(BUILTIN_WRITERS),
+              help='Format to convert to.')
+@click.option('-t', '--thread', callback=parse_thread_filters,
+              default=None, type=click.STRING,
+              help='Only include threads involving exactly the following '
+                   'comma-separated participants in output '
+                   '(-t \'Billy,Steve Smith\')')
+@click.option('-d', '--directory', default=None, type=click.Path(),
+              help='Write all output as a file per thread into a directory '
+                   '(subdirectory will be created)')
+@common_options
+def messages(path, thread, fmt, nocolor, timezones, utc, noprogress, resolve, directory):
+    """
+    Conversion of Facebook chat history.
+    """
+    with colorize_output(nocolor):
+        try:
+            chat_history = _process_history(
+                path=path, thread=thread, timezones=timezones,
+                utc=utc, noprogress=noprogress, resolve=resolve)
+        except ProcessingFailure:
+            return
+        if directory:
+            set_all_color(enabled=False)
+        write(fmt, chat_history, directory or sys.stdout)
+
+
+@fbcap.command()
+@click.option('-f', '--format', 'fmt', default='text',
+              type=click.Choice(['json', 'pretty-json', 'text', 'yaml']),
+              help='Format to output stats as (default: text).')
+@click.option('-c', '--count-size', 'most_common', default=10,
+              type=click.INT,
+              help='Number of most frequent words to include in output ('
+                   '-1 for no limit / default 10)')
+@click.option('-l', '--length', 'length', default=10,
+              type=click.INT,
+              help='Number threads to include in the output [--fmt text only] ('
+                   '-1 for no limit / default 10)')
+@common_options
+def stats(path, fmt, nocolor, timezones, utc, noprogress, most_common, resolve, length):
+    """Analysis of Facebook chat history."""
+    with colorize_output(nocolor):
+        try:
+            chat_history = _process_history(
+                path=path, thread='', timezones=timezones,
+                utc=utc, noprogress=noprogress, resolve=resolve)
+        except ProcessingFailure:
+            return
+        statistics = ChatHistoryStatistics(
+            chat_history, most_common=None if most_common < 0 else most_common)
+        if fmt == 'text':
+            statistics.write_text(sys.stdout, -1 if length < 0 else length)
+        elif fmt == 'json':
+            statistics.write_json(sys.stdout)
+        elif fmt == 'pretty-json':
+            statistics.write_json(sys.stdout, pretty=True)
+        elif fmt == 'yaml':
+            statistics.write_yaml(sys.stdout)
 
 
 if __name__ == '__main__':

@@ -80,12 +80,12 @@ Under the ``html/`` folder simply run the command ``fbcap`` in your terminal wit
 
 .. code:: bash
 
-    fbcap ./messages.htm
+    fbcap messages ./messages.htm
 
 And watch as the parser sifts through your data!
 
-.. figure:: https://zippy.gfycat.com/SpitefulSnivelingBluebreastedkookaburra.gif
-   :alt: Processing gif
+.. figure:: https://i.imgur.com/HTChSxj.png
+   :alt: Processing png
 
 When it's done, your conversation history is dumped to
 ``stdout``. This can be very long. Here is an example:
@@ -100,11 +100,15 @@ Simply supply the ``-f json`` option to the command line:
 
 .. code:: bash
 
-    fbcap ./messages.htm -f json
+    fbcap messages ./messages.htm -f json
 
-The output format is as follows:
+Or if you want pretty formatted JSON:
 
-    Messages are ordered from oldest to newest.
+.. code:: bash
+
+    fbcap messages ./messages.htm -f pretty-json
+
+The output format is as follows (messages are ordered from oldest to newest).
 
 .. code:: json
 
@@ -153,14 +157,14 @@ Of course!
     "Second User, Third User",Third User,2013-10-04T15:05Z,2
     ...
 
-What about that YAML?
-~~~~~~~~~~~~~~~~~~~~~
+What about YAML?
+~~~~~~~~~~~~~~~~
 
 For sure!
 
 .. code:: bash
 
-    fbcap ./messages.htm -f yaml
+    fbcap messages ./messages.htm -f yaml
 
 .. code:: text
 
@@ -184,15 +188,40 @@ For sure!
 What if I want to see some statistics?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can see who you talk to the most among your friends and how much each of you
-contribute to the conversation.
+You can see many statistics regarding your Facebook chat history via the ``stats`` subcommand in many different formats.
 
 .. code:: bash
 
-    fbcap ./messages.htm -f stats
+    fbcap stats ./messages.htm -f text
 
-.. figure:: http://i.imgur.com/U2T6KwC.png
+.. figure:: http://i.imgur.com/Dwzevxu.png
    :alt: stats image
+
+See the ``--help`` menu for instructions on how to control what appears in the stats.
+
+.. code:: text
+
+    $ fbcap stats --help
+    Usage: fbcap stats [OPTIONS] PATH
+
+      Analysis of Facebook chat history.
+
+    Options:
+      -f, --format [json|pretty-json|text|yaml]
+                                      Format to output stats as (default: text).
+      -c, --count-size INTEGER        Number of most frequent words to include in
+                                      output (-1 for no limit / default 10)
+      -l, --length INTEGER            Number threads to include in the output
+                                      [--fmt text only] (-1 for no limit / default
+                                      10)
+      -r, --resolve                   [BETA] Resolve profile IDs to names by
+                                      connecting to Facebook
+      -p, --noprogress                Do not show progress output
+      -n, --nocolor                   Do not colorize output
+      -u, --utc                       Use UTC timestamps in the output
+      -z, --timezones TEXT            Timezone disambiguators
+                                      (TZ=OFFSET,[TZ=OFFSET[...]])
+      --help                          Show this message and exit.
 
 How do I get any of the above into a file?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -201,7 +230,7 @@ Use standard file redirects.
 
 .. code:: bash
 
-    fbcap ./messages.htm > my_file.txt
+    fbcap messages ./messages.htm > my_file.txt
 
 Can I get each conversation into a separate file?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -210,29 +239,25 @@ Use the ``-d`` directive to send the output to a directory instead.
 
 .. code:: bash
 
-    fbcap ./messages.htm -d some/random/directory
+    fbcap messages ./messages.htm -d some/random/directory
 
-This will create a file per conversation titled ``thread_#.ext`` where # is the conversation number and
-ext is the extension of the format (e.g. ``json``). A ``manifest.txt`` file is also created, which lists
-the participants in each thread number for navigational/search purposes.
+This will create a file per conversation titled ``thread_#.ext`` where # is the conversation number and ext is the extension of the format (e.g. ``json``). A ``manifest.txt`` file is also created, which lists the participants in each thread number for navigational/search purposes.
 
 What if I only want to parse out a specific conversation?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can use the ``-t`` option to specify a particular
-conversation/thread you want to output. Just provide a comma-separated
-set of names. If you don't remember a last name (or the first name), the system will try to compensate.
+You can use the ``-t`` option to specify a particular conversation/thread you want to output. Just provide a comma-separated set of names. If you don't remember a last name (or the first name), the system will try to compensate.
 
 .. code:: bash
 
-    fbcap ./messages.htm -t second
+    fbcap messages ./messages.htm -t second
 
 .. figure:: http://i.imgur.com/3FbWIN7.png
    :alt: filter second
 
 .. code:: bash
 
-    fbcap ./messages.htm -t second,third
+    fbcap messages ./messages.htm -t second,third
 
 .. figure:: http://i.imgur.com/IJzD1LE.png
    :alt: filter second and third
@@ -251,27 +276,26 @@ Take a look at the help options to find out more!
 
 .. code:: text
 
-    $ fbcap --help
-    Usage: fbcap [OPTIONS] PATH
+    $ fbcap messages --help
+    Usage: fbcap messages [OPTIONS] PATH
 
-      A program for converting Facebook chat history (messages.htm) to a number
-      of more usable formats.
+      Conversion of Facebook chat history.
 
     Options:
-      -f, --format [csv|json|pretty-json|text|yaml|stats]
+      -f, --format [csv|json|pretty-json|text|yaml]
                                       Format to convert to.
       -t, --thread TEXT               Only include threads involving exactly the
                                       following comma-separated participants in
-                                      output (-t 'Billy,Steve Smith').
-      -z, --timezones TEXT            Timezone disambiguators
-                                      (TZ=OFFSET,[TZ=OFFSET[...]]).
+                                      output (-t 'Billy,Steve Smith')
       -d, --directory PATH            Write all output as a file per thread into a
-                                      directory (subdirectory will be created).
-      -u, --utc                       Use UTC timestamps in the output.
-      -n, --nocolor                   Do not colorize output.
-      -p, --noprogress                Do not show progress output.
+                                      directory (subdirectory will be created)
       -r, --resolve                   [BETA] Resolve profile IDs to names by
                                       connecting to Facebook
+      -p, --noprogress                Do not show progress output
+      -n, --nocolor                   Do not colorize output
+      -u, --utc                       Use UTC timestamps in the output
+      -z, --timezones TEXT            Timezone disambiguators
+                                      (TZ=OFFSET,[TZ=OFFSET[...]])
       --help                          Show this message and exit.
 
 Troubleshooting
@@ -280,9 +304,7 @@ Troubleshooting
 Why do some names appear as <some number>@facebook.com?
 -------------------------------------------------------
 
-Facebook seems to randomly swap names for IDs. It has recently gotten worse.
-The parser can resolve the names via Facebook with the ``--resolve`` flag. Keep in mind, this is a beta
-feature and may not work perfectly.
+Facebook seems to randomly swap names for IDs. As of late, this seems to be much less of an issue. Nevertheless, if you are experiencing this issue, the parser can resolve the names via Facebook with the ``--resolve`` flag. Keep in mind, this is a beta feature and may not work perfectly.
 
 .. code:: text
 
@@ -291,23 +313,19 @@ feature and may not work perfectly.
     Facebook password:
 
 This requires your Facebook credentials to get accurate results. This is a direct connection between your computer and Facebook.
-Your credentials are not relayed through any servers. Please look at the code if you are
-feeling paranoid or skeptical :)
+Your credentials are not relayed through any servers. Please look at the code if you are feeling paranoid or skeptical :)
 
 Why are some of my chat threads missing?
 ----------------------------------------
 
-This is a mysterious issue on Facebook's end. From anecdotal evidence, it seems that what gets returned in your
-chat archive is generally conversations with people who you have most recently talked to. Fortunately, it always
-seems to be the complete history for each conversation and nothing gets truncated.
+This is a mysterious issue on Facebook's end. From anecdotal evidence, it seems that what gets returned in your chat archive is generally conversations with people who you have most recently talked to. Fortunately, it always seems to be the complete history for each conversation and nothing gets truncated.
 
-Unfortunately, this cannot be remedied unless Facebook fixes the problem on their end.
+As of late, it seems like Facebook has fixed this issue on their end and it is now far less of an issue.
 
 Why are repeated names not showing?
 -----------------------------------
 
-Multiple users with equal names in group chats are shown as a single user. This has to do with Facebook's
-presentation of names in the message files, which doesn't make this distinction.
+Multiple users with equal names in group chats are shown as a single user. This has to do with Facebook's presentation of names in the message files, which doesn't make this distinction.
 
 This cannot be remedied unless Facebook fixes the problem.
 

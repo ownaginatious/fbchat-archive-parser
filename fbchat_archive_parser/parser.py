@@ -346,7 +346,7 @@ class MessageHtmlParser(object):
                 existing_thread.add_message(m)
 
     def parse_participants(self, participants):
-        if not participants:
+        if len(participants) == 0:
             return ()
         if not isinstance(participants, six.string_types):
             if not participants.text:

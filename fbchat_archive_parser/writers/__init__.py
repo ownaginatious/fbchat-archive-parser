@@ -10,7 +10,6 @@ import six
 from .json import JsonWriter
 from .pretty_json import PrettyJsonWriter
 from .csv import CsvWriter
-from .stats import StatsWriter
 from .text import TextWriter
 from .yaml import YamlWriter
 
@@ -22,8 +21,7 @@ _BUILTIN_WRITERS = {
     "pretty-json": PrettyJsonWriter,
     "csv": CsvWriter,
     "text": TextWriter,
-    "yaml": YamlWriter,
-    "stats": StatsWriter
+    "yaml": YamlWriter
 }
 
 BUILTIN_WRITERS = tuple(sorted(list(_BUILTIN_WRITERS.keys())))
