@@ -1,3 +1,7 @@
+**UPDATE April 28th 2018:** Facebook recently revamped the "download your data" feature to a much more usable state. This was probably in compliance with GDPR laws by the European Union, which will be enforced starting in May 2018. Facebook now allows you to download your message data in JSON format, which supercedes the purpose of this project.
+
+In light of that **this repository will no longer be maintained**.
+
 Facebook Chat Archive Parser
 ============================
 
